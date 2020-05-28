@@ -42,7 +42,6 @@ main (int argc, char *argv[])
   
   LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
-  //LogComponentEnable ("PerfectClockModelImpl",LOG_LEVEL_INFO);
 
 
   NodeContainer nodes;
@@ -52,11 +51,9 @@ main (int argc, char *argv[])
 
   Ptr<PerfectClockModelImpl> clockImpl0 = CreateObject <PerfectClockModelImpl> ();
   Ptr<PerfectClockModelImpl> clockImpl1 = CreateObject <PerfectClockModelImpl> ();
-  clockImpl0 -> SetAttribute ("Frequency", DoubleValue (2));
 
+  clockImpl0 -> SetAttribute ("Frequency", DoubleValue (1));
   clockImpl1 -> SetAttribute ("Frequency", DoubleValue (1));
-
-  //Config::SetDefault ("ns3::LocalClock::ClockModelImpl", PointerValue (clockImpl0));
   
   Ptr<LocalClock> clock0 = CreateObject<LocalClock> ();
   Ptr<LocalClock> clock1 = CreateObject<LocalClock> ();
@@ -69,7 +66,6 @@ main (int argc, char *argv[])
 
   n1 -> AggregateObject (clock0);
   n2 -> AggregateObject (clock1);
-
 
   PointToPointHelper pointToPoint;
   pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
@@ -90,7 +86,7 @@ main (int argc, char *argv[])
 
   ApplicationContainer serverApps = echoServer.Install (nodes.Get (1));
   serverApps.Start (Seconds (2.0));
-  serverApps.Stop (Seconds (500.0));
+  serverApps.Stop (Seconds (100.0));
 
   UdpEchoClientHelper echoClient (interfaces.GetAddress (1), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (10));
@@ -99,9 +95,7 @@ main (int argc, char *argv[])
 
   ApplicationContainer clientApps = echoClient.Install (nodes.Get (0));
   clientApps.Start (Seconds (2.0));
-  clientApps.Stop (Seconds (500.0));
-
-  
+  clientApps.Stop (Seconds (100.0));
 
   Simulator::Run ();
   Simulator::Destroy ();
