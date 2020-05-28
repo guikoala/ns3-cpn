@@ -264,7 +264,8 @@ LocalTimeSimulatorImpl::Schedule (Time const &delay, EventImpl *event)
 
   Time tAbsolute;
 
- if ( m_currentContext == uint32_t(4294967295))
+  //Avoid stop application events with 4294967295 context
+  if ( m_currentContext == uint32_t(4294967295))
   {
     tAbsolute = CalculateAbsoluteTime (delay);
   }

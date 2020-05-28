@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre 
+ * Author: Guillermo Aguirre guillermoaguirre10@gmail.com
  */
 #ifndef CLOCK_MODEL_IMPL_H
 #define CLOCK_MODEL_IMPL_H

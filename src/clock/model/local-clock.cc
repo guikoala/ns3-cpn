@@ -18,9 +18,6 @@
  * Author: Guillermo Aguirre 
  */
 
-// TODO Logging 
-
-
 
 #include "ns3/local-clock.h"
 #include "ns3/log.h"
@@ -64,7 +61,6 @@ LocalClock::LocalClock (Ptr<ClockModelImpl> clock)
 {
   NS_LOG_FUNCTION (this);
   m_clock = clock;
-  NS_LOG_DEBUG ("Create Local Clock with contructor");
 }
 
 LocalClock::~LocalClock()
@@ -86,6 +82,8 @@ LocalClock::SetClock (Ptr<ClockModelImpl> newClock)
     Ptr<ClockModelImpl> oldClock = m_clock;
     m_clock = newClock;
 
+    //First run over the list to remove expire events. 
+
     for (std::list<Ptr<ExtendedEventId>>::const_iterator iter = m_events.begin (); iter != m_events.end ();)
     { 
       if ((*iter) -> GetEventId ().IsExpired () )
@@ -105,7 +103,6 @@ LocalClock::SetClock (Ptr<ClockModelImpl> newClock)
   {
       EventId eventId = (*iter) -> GetEventId ();
       Time eventTimeStamp = TimeStep((*iter) -> GetEventId ().GetTs ()); 
-       
       Ptr<SimulatorImpl> simImpl = Simulator::GetImplementation ();
       Ptr<LocalTimeSimulatorImpl> mysimImpl= DynamicCast<LocalTimeSimulatorImpl> (simImpl);
 
@@ -156,6 +153,7 @@ LocalClock::InsertEvent( Ptr<ExtendedEventId> event)
 void 
 LocalClock::ReSchedule (Time globalTimeStamp, EventImpl *impl)
 {
+  NS_LOG_FUNCTION (this << globalTimeStamp << impl);
   Time globalOldDurationRemain = globalTimeStamp - Simulator::Now ();  
   Simulator::Schedule (globalOldDurationRemain, impl);
 }
