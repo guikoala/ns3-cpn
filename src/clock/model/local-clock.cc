@@ -84,7 +84,7 @@ LocalClock::SetClock (Ptr<ClockModelImpl> newClock)
 
     //First run over the list to remove expire events. 
 
-    for (std::list<EventId>::const_iterator iter = m_events.begin (); iter != m_events.end ();)
+    for (std::list<EventId>::iterator iter = m_events.begin (); iter != m_events.end ();)
     { 
       if ((*iter).IsExpired ())
       {
@@ -99,7 +99,7 @@ LocalClock::SetClock (Ptr<ClockModelImpl> newClock)
     std::list<EventId> eventListAux (m_events);
     m_events.clear ();
 
-    for (std::list<EventId>::const_iterator iter = eventListAux.begin (); iter != eventListAux.end ();++iter)
+    for (std::list<EventId>::iterator iter = eventListAux.begin (); iter != eventListAux.end ();++iter)
   {
       Time eventTimeStamp = TimeStep((*iter).GetTs ()); 
       Ptr<SimulatorImpl> simImpl = Simulator::GetImplementation ();
