@@ -27,7 +27,6 @@
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
 #include "ns3/nstime.h"
-#include "ns3/extended-event-id.h"
 namespace ns3 {
 /**
  * \file
@@ -111,9 +110,9 @@ public:
   
   /**
    * \brief Insert a event in m_events to keep track of the events scheduled by this node.  
-   * \param event Pointer to the extended eventId to be inserted
+   * \param event Pointer to the EventId to be inserted
    */
-  void InsertEvent (Ptr <ExtendedEventId> event);
+  void InsertEvent (Ptr <EventId> event);
   /**
    * Return true if SetClock function has been called.
    */
@@ -132,7 +131,7 @@ private:
   //Clock implementation for the local clock
   Ptr<ClockModelImpl> m_clock;  
   //List of events schedulled by this node.           
-  std::list<Ptr<ExtendedEventId>> m_events;      
+  std::list<Ptr<EventId>> m_events;      
   
 };
 

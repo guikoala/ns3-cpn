@@ -84,9 +84,9 @@ LocalClock::SetClock (Ptr<ClockModelImpl> newClock)
 
     //First run over the list to remove expire events. 
 
-    for (std::list<Ptr<ExtendedEventId>>::const_iterator iter = m_events.begin (); iter != m_events.end ();)
+    for (std::list<EventId>::const_iterator iter = m_events.begin (); iter != m_events.end ();)
     { 
-      if ((*iter) -> GetEventId ().IsExpired () )
+      if ((*iter).IsExpired ())
       {
         iter = m_events.erase (iter);    
       }
@@ -96,13 +96,12 @@ LocalClock::SetClock (Ptr<ClockModelImpl> newClock)
       }
     }
 
-    std::list<Ptr<ExtendedEventId>> eventListAux (m_events);
+    std::list<EventId> eventListAux (m_events);
     m_events.clear ();
 
-    for (std::list<Ptr<ExtendedEventId>>::const_iterator iter = eventListAux.begin (); iter != eventListAux.end ();++iter)
+    for (std::list<EventId>::const_iterator iter = eventListAux.begin (); iter != eventListAux.end ();++iter)
   {
-      EventId eventId = (*iter) -> GetEventId ();
-      Time eventTimeStamp = TimeStep((*iter) -> GetEventId ().GetTs ()); 
+      Time eventTimeStamp = TimeStep((*iter).GetTs ()); 
       Ptr<SimulatorImpl> simImpl = Simulator::GetImplementation ();
       Ptr<LocalTimeSimulatorImpl> mysimImpl= DynamicCast<LocalTimeSimulatorImpl> (simImpl);
 
@@ -110,8 +109,8 @@ LocalClock::SetClock (Ptr<ClockModelImpl> newClock)
       {
         NS_LOG_WARN ("NOT USING THE CORRECT SIMULATOR IMPLEMENTATION");
       }
-      mysimImpl -> CancelRescheduling (eventId);
-      ReSchedule (eventTimeStamp, eventId.PeekEventImpl());
+      mysimImpl -> CancelRescheduling (*iter);
+      ReSchedule (eventTimeStamp, (*iter).PeekEventImpl());
     }
 }
 
@@ -144,9 +143,9 @@ LocalClock::LocalToGlobalAbs (Time localDelay)
 }
 
 void 
-LocalClock::InsertEvent( Ptr<ExtendedEventId> event)
+LocalClock::InsertEvent (EventId event)
 {
-  NS_LOG_FUNCTION (this << event);
+  //NS_LOG_FUNCTION (this << event);
   m_events.push_back (event);
 }
 
