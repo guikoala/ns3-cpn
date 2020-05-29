@@ -65,21 +65,17 @@ Time
 PerfectClockModelImpl::GetLocalTime ()
 {
   NS_LOG_FUNCTION (this);
-  Time localDuration;
-  Time globalDuration = Simulator::Now () - std::get<1>(m_timeUpdates);
-  localDuration = GlobalToLocalAbs (globalDuration);
-  return localDuration;
+  Time localTime;
+  Time globalTime = Simulator::Now () ;
+  localTime = GlobalToLocalTime(globalTime);
+  return localTime;
 }
 
 Time 
 PerfectClockModelImpl::GlobalToLocalTime (Time globalTime)
 {
   NS_LOG_FUNCTION(this << globalTime);
-  Time localDuration;
-  Time localTime;
-  Time globalDuration = globalTime - std::get<1>(m_timeUpdates);  
-  localDuration = GlobalToLocalAbs (globalDuration);
-  localTime = std::get<0>(m_timeUpdates) + localDuration;
+  Time localTime = Time (globalTime.GetDouble () / m_frequency); 
   return localTime;
 }
 
@@ -87,11 +83,7 @@ Time
 PerfectClockModelImpl::LocalToGlobalTime (Time localTime)
 {
   NS_LOG_FUNCTION (this << localTime);
-  Time globalTime;
-  Time globalDuration;
-  Time localDuration = localTime - std::get<0>(m_timeUpdates);
-  globalDuration = LocalToGlobalAbs (localDuration);
-  globalTime = globalDuration + std::get<1>(m_timeUpdates);
+  Time globalTime = Time (localTime.GetDouble () * m_frequency); 
   return globalTime;
 }
 
@@ -100,7 +92,9 @@ PerfectClockModelImpl::GlobalToLocalAbs (Time globaldDelay)
 {
   NS_LOG_FUNCTION (this << globaldDelay); 
   Time localDelay;
-  localDelay = Time::FromDouble (globaldDelay.GetTimeStep () / (m_frequency),Time::NS);
+  Time globalTime = Simulator::Now();
+  Time localAbsTime = GlobalToLocalTime (globaldDelay + globalTime);
+  localDelay = localAbsTime - GetLocalTime ();
   return localDelay;
 }
 
@@ -109,7 +103,9 @@ PerfectClockModelImpl::LocalToGlobalAbs (Time localDelay)
 {
   NS_LOG_FUNCTION (this << localDelay);
   Time globalDelay;
-  globalDelay = Time::FromDouble (localDelay.GetTimeStep () * m_frequency, Time::NS);
+  Time localTime = GetLocalTime ();
+  Time globalAbsTime = LocalToGlobalTime (localDelay + localTime);
+  globalDelay = globalAbsTime -Simulator::Now ();
   return globalDelay;
 }
 }
