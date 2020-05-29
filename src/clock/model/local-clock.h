@@ -123,10 +123,10 @@ private:
    * \brief ReSchedule an Event in the main simulator. This function calculate the remaining 
    * time for the event to be executed and reschedule the event with the new delay updated to 
    * the new clock.
-   * \param stamp globaltime of the vent to be rechedule
+   * \param globalTimeStamp globaltime of the vent to be rechedule
    * \param impl 
    */
-  void ReSchedule (Time globalTimeStamp, EventImpl *impl);
+  void ReSchedule (Time globalTimeStamp, EventImpl *impl, Ptr<ClockModelImpl> oldClock);
 
   //Clock implementation for the local clock
   Ptr<ClockModelImpl> m_clock;  
