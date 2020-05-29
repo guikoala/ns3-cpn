@@ -22,6 +22,7 @@
 #include "ns3/applications-module.h"
 #include "ns3/local-clock.h"
 #include "ns3/perfect-clock-model-impl.h"
+#include "ns3/adversarial-clock-model.h"
 #include "ns3/gnuplot-helper.h"
 
 /**
@@ -45,11 +46,9 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("FirstScriptExample");
 
-void setClock (Ptr<LocalClock> clock, double freq)
+void setClock (Ptr<LocalClock> clock, double freq, Ptr<ClockModelImpl> clockImpl)
 {
   NS_LOG_DEBUG ("Calling function set clock");
-  Ptr<PerfectClockModelImpl> clockImpl = CreateObject <PerfectClockModelImpl> ();
-  clockImpl -> SetAttribute ("Frequency", DoubleValue (freq));
   clock -> SetClock (clockImpl);
 }
 
@@ -77,10 +76,17 @@ main (int argc, char *argv[])
 
   Ptr<PerfectClockModelImpl> clockImpl0 = CreateObject <PerfectClockModelImpl> ();
   Ptr<PerfectClockModelImpl> clockImpl1 = CreateObject <PerfectClockModelImpl> ();
+  Ptr<AdversarialClock> clockImpl2 = CreateObject <AdversarialClock> ();
 
   clockImpl0 -> SetAttribute ("Frequency", DoubleValue (1.2));
   clockImpl1 -> SetAttribute ("Frequency", DoubleValue (1));
-  
+  clockImpl2 -> SetAttribute ("Delta", TimeValue (MilliSeconds (5)));
+  clockImpl2 -> SetAttribute ("Interval", TimeValue (Seconds (5)));
+  clockImpl2 -> SetAttribute ("xvalueGlobal", TimeValue (Seconds (1)));
+  clockImpl2 -> SetAttribute ("Slope", DoubleValue (1.2));
+
+
+
   Ptr<LocalClock> clock0 = CreateObject<LocalClock> ();
   Ptr<LocalClock> clock1 = CreateObject<LocalClock> ();
 
@@ -124,10 +130,22 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (maxTime));
   double freq= 1.2;
+  int j=0; //variable to swap between adverarial clock and perfect clock
+  Ptr<ClockModelImpl> clockImpl;
 
   for (int i=10;i<maxTime;)
   {
-    Simulator::ScheduleWithContext (0, Seconds (i), &setClock, clock0, freq+1);
+    if (j==0)
+    {
+      clockImpl = clockImpl0;
+      j=1;
+    }
+    else
+    {
+      clockImpl = clockImpl2;
+      j=0;
+    }
+    Simulator::ScheduleWithContext (0, Seconds (i), &setClock, clock0, freq+1, clockImpl);
     i+=10;
   }
 
