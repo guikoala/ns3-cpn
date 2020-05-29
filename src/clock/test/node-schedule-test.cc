@@ -157,10 +157,11 @@ EventSchedulTestCase::DoSetup ()
   Simulator::ScheduleWithContext (id, Seconds (1), &EventSchedulTestCase::EventA, this, Seconds (1), Seconds (2));
   EventId a = Simulator::Schedule (Seconds (2), &EventSchedulTestCase::Send, this, Seconds (1), Seconds (4));
   EventId b = Simulator::Schedule (Seconds (2), &EventSchedulTestCase::Send, this, Seconds (2), Seconds (6));
-  EventId c = Simulator::Schedule (Seconds (3), &EventSchedulTestCase::Send, this, Seconds (3), Seconds (15));
+  EventId c = Simulator::Schedule (Seconds (3), &EventSchedulTestCase::Send, this, Seconds (3), Seconds (11));
   
   Simulator::Schedule (Seconds (7), &EventSchedulTestCase::NewFrequency, this);
   Simulator::Schedule (Seconds (3), &EventSchedulTestCase::Expired, this, c);
+
 
   NS_TEST_EXPECT_MSG_EQ (!a.IsExpired (), true, "Event a expired when it shouldn't");
   NS_TEST_EXPECT_MSG_EQ (!b.IsExpired (), true, "Event a expired when it shouldn't");
