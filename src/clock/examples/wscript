@@ -2,8 +2,5 @@
 
 def build(bld):
 
-    obj = bld.create_ns3_program('two-clocks-no-update', ['clock', 'point-to-point', 'internet', 'applications','network'])
-    obj.source = 'two-clocks-no-update.cc'
-
-    obj = bld.create_ns3_program('two-clocks-update', ['clock', 'point-to-point', 'internet', 'applications','network'])
-    obj.source = 'two-clocks-update.cc'
+    obj = bld.create_ns3_program('two-clocks-example', ['clock', 'point-to-point', 'internet', 'applications','network'])
+    obj.source = 'two-clocks-example.cc'
