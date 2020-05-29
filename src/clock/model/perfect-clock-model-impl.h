@@ -29,6 +29,9 @@ namespace ns3 {
  * ns3::PerfectClockModelImpl declaration
  * 
  * @brief This class represents a perfect clock modelling. 
+ * The mapping between the local time and global time is set by perfect linear function.
+ *  The slope of the function is determined by the frequency value. So if for example the frequency is set to 2.
+ * Local clock will be two times slower that the global time. When local time sais 2 global time will be saying 4. 
  */
 
 class PerfectClockModelImpl : public ClockModelImpl
