@@ -17,44 +17,48 @@
  *
  * Author: Guillermo Aguirre 
  */
-#ifndef PERFECT_CLOCK_MODEL_IMPL_H
-#define PERFECT_CLOCK_MODEL_IMPL_H
+#ifndef ADVERSARIAL_CLOCK_MODEL_H
+#define ADVERSARIAL_CLOCK_MODEL_H
 
-#include "ns3/clock-model-impl.h"
+#include "clock-model-impl.h"
 #include "ns3/object.h"
 
 namespace ns3 {
+
 /**
  * \file Clock
- * ns3::PerfectClockModelImpl declaration
+ * ns3::AdversarialClock declaration
  * 
- * @brief This class represents a perfect clock modelling. 
- * The mapping between the local time and global time is set by perfect linear function.
- *  The slope of the function is determined by the frequency value. So if for example the frequency is set to 2.
- * Local clock will be two times slower that the global time. When local time sais 2 global time will be saying 4. 
+ * @brief This class represents an adversarial clock modelling. 
  */
 
-class PerfectClockModelImpl : public ClockModelImpl
+class AdversarialClock : public ClockModelImpl
 {
 public:
   static TypeId GetTypeId (void);
 
-  PerfectClockModelImpl ();
-  ~PerfectClockModelImpl ();
+  AdversarialClock ();
+  ~AdversarialClock ();
 
   Time GetLocalTime ();
   Time GlobalToLocalTime (Time globalTime);
   Time LocalToGlobalTime (Time localtime);
   Time GlobalToLocalAbs (Time globaldDelay);
   Time LocalToGlobalAbs (Time localdelay);
-
 private:
-//Frequency of the clock
-  double m_frequency;
-// Pair of last update <locatime, simulatortime>
-  std::pair<Time,Time> m_timeUpdates;
+
+  Time m_delta;
+  Time m_period;
+  Time m_interval;
+  Time m_rho;
+  double m_slope;
+  Time m_epsiddon;
+  Time m_xjlocal;
+  Time m_xjglobal;
+  Time CalculateRelativeTimeGlobalToLocal (Time time);
+  Time CalculateRelativeTimeLocalToGlobal (Time time);
+
 };
 
-
 }//namespace ns3
-#endif /* PERFECT_CLOCK_MODEL_IMPL_H */
+#endif /*ADVERSARIAL_CLOCK_MODEL_H*/

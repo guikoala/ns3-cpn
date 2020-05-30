@@ -26,7 +26,6 @@
 #include "ns3/assert.h"
 #include "ns3/node-list.h"
 #include "ns3/node.h"
-#include "extended-event-id.h"
 
 
    
@@ -141,7 +140,7 @@ LocalTimeSimulatorImpl::ProcessOneEvent (void)
 
   Scheduler::Event next = m_events->RemoveNext ();
 
-  //Do not process events that have been cancelled when clock update
+  //Do not process events that have been cancelled by a node due to clock update
   for (std::list<EventId>::iterator it = m_eventCancelation.begin ();it !=m_eventCancelation.end ();)
   {
     if (it -> GetUid () == next.key.m_uid)
@@ -172,6 +171,7 @@ LocalTimeSimulatorImpl::ProcessOneEvent (void)
   NS_LOG_LOGIC ("handle " << next.key.m_ts);
   m_currentTs = next.key.m_ts;
 
+  //avoid 4294967295 context
   if ( next.key.m_context == uint32_t(4294967295))
   {
     NS_LOG_DEBUG ("The context doens't correspond to a node -> Application stop event");
@@ -257,9 +257,9 @@ LocalTimeSimulatorImpl::Stop (Time const &delay)
 }
 
 EventId
-LocalTimeSimulatorImpl::Schedule (Time const &delay, EventImpl *event)
+LocalTimeSimulatorImpl::Schedule (Time const &localDelay, EventImpl *event)
 {
-  NS_LOG_INFO (this << delay.GetTimeStep () << event);
+  NS_LOG_INFO (this << localDelay.GetTimeStep () << event);
   NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::Schedule Thread-unsafe invocation!");
 
   Time tAbsolute;
@@ -267,27 +267,24 @@ LocalTimeSimulatorImpl::Schedule (Time const &delay, EventImpl *event)
   //Avoid stop application events with 4294967295 context
   if ( m_currentContext == uint32_t(4294967295))
   {
-    tAbsolute = CalculateAbsoluteTime (delay);
+    tAbsolute = CalculateAbsoluteTime (localDelay);
   }
   else
   {
     // Obtain nodes clock from the context
     Ptr <Node>  n = NodeList::GetNode (m_currentContext);
     Ptr <LocalClock> clock = n -> GetObject <LocalClock> ();
-    Time globalTimeDelay = clock -> LocalToGlobalAbs (delay);
+    Time globalTimeDelay = clock -> LocalToGlobalAbs (localDelay);
     tAbsolute = CalculateAbsoluteTime (globalTimeDelay);
     //Insert eventId in the list of scheduled events by the node.
-    EventId eventId (event, tAbsolute.GetTimeStep (), GetContext (), m_uid);
-    Ptr <ExtendedEventId> extendedEventId = CreateObject <ExtendedEventId> (eventId);
-    Time localTimeStamp = clock -> GetLocalTime () + delay;
-    extendedEventId -> SetLocalTimeStamp (localTimeStamp.GetTimeStep ());
-    clock -> InsertEvent (extendedEventId);
-    }
-  
+    EventId eventId = EventId(event, tAbsolute.GetTimeStep (), GetContext (), m_uid);
+    Time localTimeStamp = clock -> GetLocalTime () + localDelay;
+    clock -> InsertEvent (eventId);
+  }
+
   Scheduler::Event ev = InsertScheduler (event,tAbsolute);
   return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
 }
-
 
 Scheduler::Event 
 LocalTimeSimulatorImpl::InsertScheduler (EventImpl *event, Time tAbsolute)
@@ -300,7 +297,6 @@ LocalTimeSimulatorImpl::InsertScheduler (EventImpl *event, Time tAbsolute)
   m_uid++;
   m_unscheduledEvents++;
   m_events->Insert (ev);
-
   return ev;
 }
 
@@ -350,9 +346,12 @@ LocalTimeSimulatorImpl::ScheduleNow (EventImpl *event)
 {
   NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::ScheduleNow Thread-unsafe invocation!");
 
+  Ptr <Node>  n = NodeList::GetNode (m_currentContext);
+  Ptr <LocalClock> clock = n -> GetObject <LocalClock> ();
+  Time globalTime = clock->LocalToGlobalTime (Now ());
   Scheduler::Event ev;
   ev.impl = event;
-  ev.key.m_ts = m_currentTs;
+  ev.key.m_ts = globalTime.GetTimeStep ();
   ev.key.m_context = GetContext ();
   ev.key.m_uid = m_uid;
   m_uid++;
@@ -464,6 +463,19 @@ LocalTimeSimulatorImpl::IsExpired (const EventId &id) const
         }
       return true;
     }
+  //If the event is been reschedule (So, is in eventcancelatio list) is not expired.
+  for (std::list<EventId>::const_iterator it = m_eventCancelation.begin ();it !=m_eventCancelation.end ();)
+  {
+    if (it -> GetUid () == id.GetUid ())
+    {
+      return false;
+    }
+    else
+    {
+      ++it;
+    }
+  }
+
 
   if (id.PeekEventImpl () == 0 ||
       id.GetTs () < m_currentTs ||
