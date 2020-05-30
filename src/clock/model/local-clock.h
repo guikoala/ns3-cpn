@@ -110,7 +110,7 @@ public:
   
   /**
    * \brief Insert a event in m_events to keep track of the events scheduled by this node.  
-   * \param event Pointer to the EventId to be inserted
+   * \param event EventId to be inserted
    */
   void InsertEvent (EventId event);
   /**
@@ -121,10 +121,11 @@ private:
   
   /**
    * \brief ReSchedule an Event in the main simulator. This function calculate the remaining 
-   * time for the event to be executed and reschedule the event with the new delay updated to 
-   * the new clock.
+   * time for the event to be executed and reschedule the event.
+   * 
    * \param globalTimeStamp globaltime of the vent to be rechedule
-   * \param impl 
+   * \param impl Event implementation
+   * \param oldClock Clock before the update 
    */
   void ReSchedule (Time globalTimeStamp, EventImpl *impl, Ptr<ClockModelImpl> oldClock);
 
