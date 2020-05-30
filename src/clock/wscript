@@ -10,6 +10,7 @@ def build(bld):
     module = bld.create_ns3_module('clock', ['core'])
     module.source = [
         'model/clock-model-impl.cc',
+        'model/adversarial-clock-model.cc',
         'model/extended-event-id.cc',
         'model/local-clock.cc',
         'model/localtime-simulator-impl.cc',
@@ -26,12 +27,16 @@ def build(bld):
     headers.module = 'clock'
     headers.source = [
         'model/clock-model-impl.h',
+        'model/adversarial-clock-model.h',
         'model/extended-event-id.h',
         'model/local-clock.h',
         'model/localtime-simulator-impl.h',
         'model/perfect-clock-model-impl.h',
         'helper/clock-helper.h',
         ]
+
+    if bld.env['ENABLE_EXAMPLES']:
+        bld.recurse('examples')
 
    
 

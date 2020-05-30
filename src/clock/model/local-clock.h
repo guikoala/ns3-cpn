@@ -27,7 +27,6 @@
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
 #include "ns3/nstime.h"
-#include "ns3/extended-event-id.h"
 namespace ns3 {
 /**
  * \file
@@ -111,9 +110,9 @@ public:
   
   /**
    * \brief Insert a event in m_events to keep track of the events scheduled by this node.  
-   * \param event Pointer to the extended eventId to be inserted
+   * \param event EventId to be inserted
    */
-  void InsertEvent (Ptr <ExtendedEventId> event);
+  void InsertEvent (EventId event);
   /**
    * Return true if SetClock function has been called.
    */
@@ -122,17 +121,18 @@ private:
   
   /**
    * \brief ReSchedule an Event in the main simulator. This function calculate the remaining 
-   * time for the event to be executed and reschedule the event with the new delay updated to 
-   * the new clock.
-   * \param stamp globaltime of the vent to be rechedule
-   * \param impl 
+   * time for the event to be executed and reschedule the event.
+   * 
+   * \param globalTimeStamp globaltime of the vent to be rechedule
+   * \param impl Event implementation
+   * \param oldClock Clock before the update 
    */
-  void ReSchedule (Time globalTimeStamp, EventImpl *impl);
+  void ReSchedule (Time globalTimeStamp, EventImpl *impl, Ptr<ClockModelImpl> oldClock);
 
   //Clock implementation for the local clock
   Ptr<ClockModelImpl> m_clock;  
   //List of events schedulled by this node.           
-  std::list<Ptr<ExtendedEventId>> m_events;      
+  std::list<EventId> m_events;      
   
 };
 
