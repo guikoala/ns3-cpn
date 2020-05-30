@@ -140,7 +140,7 @@ LocalTimeSimulatorImpl::ProcessOneEvent (void)
 
   Scheduler::Event next = m_events->RemoveNext ();
 
-  //Do not process events that have been cancelled when clock update
+  //Do not process events that have been cancelled by a node due to clock update
   for (std::list<EventId>::iterator it = m_eventCancelation.begin ();it !=m_eventCancelation.end ();)
   {
     if (it -> GetUid () == next.key.m_uid)
@@ -171,6 +171,7 @@ LocalTimeSimulatorImpl::ProcessOneEvent (void)
   NS_LOG_LOGIC ("handle " << next.key.m_ts);
   m_currentTs = next.key.m_ts;
 
+  //avoid 4294967295 context
   if ( next.key.m_context == uint32_t(4294967295))
   {
     NS_LOG_DEBUG ("The context doens't correspond to a node -> Application stop event");
@@ -345,9 +346,12 @@ LocalTimeSimulatorImpl::ScheduleNow (EventImpl *event)
 {
   NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::ScheduleNow Thread-unsafe invocation!");
 
+  Ptr <Node>  n = NodeList::GetNode (m_currentContext);
+  Ptr <LocalClock> clock = n -> GetObject <LocalClock> ();
+  Time globalTime = clock->LocalToGlobalTime (Now ());
   Scheduler::Event ev;
   ev.impl = event;
-  ev.key.m_ts = m_currentTs;
+  ev.key.m_ts = globalTime.GetTimeStep ();
   ev.key.m_context = GetContext ();
   ev.key.m_uid = m_uid;
   m_uid++;
@@ -459,6 +463,19 @@ LocalTimeSimulatorImpl::IsExpired (const EventId &id) const
         }
       return true;
     }
+  //If the event is been reschedule (So, is in eventcancelatio list) is not expired.
+  for (std::list<EventId>::const_iterator it = m_eventCancelation.begin ();it !=m_eventCancelation.end ();)
+  {
+    if (it -> GetUid () == id.GetUid ())
+    {
+      return false;
+    }
+    else
+    {
+      ++it;
+    }
+  }
+
 
   if (id.PeekEventImpl () == 0 ||
       id.GetTs () < m_currentTs ||

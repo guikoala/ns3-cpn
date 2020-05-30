@@ -97,24 +97,33 @@ public:
 
     virtual void DoDispose (void);
 
-    /**
-     */
-    void CancelRescheduling (const EventId &id);
+    
 
 
   /**
    *  \brief This function provides a mechanism to translate the delay which is based on the node local time. 
    * The node implementation is obtained through the node list and the current context.
-   * DefaultSimulatorImpl::Schedule(const Time &delay, EventImpl *event) is called to simulate 
-   * the events in the main simulator.
+   * 
+   * \param delay Delay in time measured in localtime
+   * \param event Event implementation
    */
   virtual EventId Schedule (const Time &delay, EventImpl *event);
   /**
   * \brief Every time a there is a cancel call ensure if the cancel comes from a rescheduling event 
   * due to a clock change. If the cancel call is due to a rescehduling, we insert those events 
-  * in m_eventCancelation but we dont set the flag m_cancel of eventImpl so we can reschedule afterards.
+  * in m_eventCancelation but we dont set the flag m_cancel on eventImpl so we can reschedule afterards.
+  * 
+  * \param 
   */
   virtual void Cancel (const EventId &id);
+
+  /**
+   * \brief This function is only call when the node is when a node whats to reschedule a function. Instead of calling to cancel() it shoudl call to
+   * CancelRescheduling. Cancel() method will invalidate the event implementation and would be impossible to reschedule the event with anoter time. 
+   * 
+   * \param id Event Id that want to be removed.
+  */
+  void CancelRescheduling (const EventId &id);
 
 private:
 
