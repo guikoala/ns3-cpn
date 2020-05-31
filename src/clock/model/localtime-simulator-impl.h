@@ -178,8 +178,10 @@ private:
   uint32_t m_currentContext;
   /** The event count. */
   uint64_t m_eventCount;
+  /** Container type for the events that has been cancelled due to rescheduling */
+  typedef std::list<EventId> CancelEvents;
   /** List of events cancelled due to rescheduling */
-  std::list<EventId> m_eventCancelation;
+  CancelEvents m_eventCancelation;
 
   /**
    * Number of events that have been inserted but not yet scheduled,
