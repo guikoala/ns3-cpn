@@ -141,26 +141,13 @@ LocalTimeSimulatorImpl::ProcessOneEvent (void)
   Scheduler::Event next = m_events->RemoveNext ();
 
   //Do not process events that have been cancelled by a node due to clock update
-  for (std::list<EventId>::iterator it = m_eventCancelation.begin ();it !=m_eventCancelation.end ();)
+  for (CancelEvents::const_iterator it = m_eventCancelation.begin ();it !=m_eventCancelation.end ();it++)
   {
     if (it -> GetUid () == next.key.m_uid)
     {
       m_unscheduledEvents--;
-      if (it ->IsExpired ())
-      {
-        it = m_eventCancelation.erase (it);
-        return;
-      }
-      else
-      {
-        {
-          return;
-        }
-      }
-    }
-    else
-    {
-      ++it;
+      m_eventCancelation.erase (it);
+      return;
     }
   }
 
@@ -184,7 +171,6 @@ LocalTimeSimulatorImpl::ProcessOneEvent (void)
   m_currentUid = next.key.m_uid;
   next.impl->Invoke ();
   next.impl->Unref ();
-
   ProcessEventsWithContext ();
 }
 
@@ -464,19 +450,17 @@ LocalTimeSimulatorImpl::IsExpired (const EventId &id) const
       return true;
     }
   //If the event is been reschedule (So, is in eventcancelatio list) is not expired.
-  for (std::list<EventId>::const_iterator it = m_eventCancelation.begin ();it !=m_eventCancelation.end ();)
-  {
-    if (it -> GetUid () == id.GetUid ())
+  for (CancelEvents::const_iterator it = m_eventCancelation.begin (); it !=m_eventCancelation.end ();it++)
+  {//NOT solve
+    if (*it == id)
     {
-      return false;
-    }
-    else
-    {
-      ++it;
+      if(it->GetTs () >= m_currentTs)
+      {
+        return true;
+      }
     }
   }
-
-
+  
   if (id.PeekEventImpl () == 0 ||
       id.GetTs () < m_currentTs ||
       (id.GetTs () == m_currentTs &&
