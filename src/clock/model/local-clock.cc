@@ -109,8 +109,8 @@ LocalClock::SetClock (Ptr<ClockModelImpl> newClock)
       {
         NS_LOG_WARN ("NOT USING THE CORRECT SIMULATOR IMPLEMENTATION");
       }
-      mysimImpl -> CancelRescheduling (*iter);
-      ReSchedule (eventTimeStamp, (*iter).PeekEventImpl(), oldClock);
+      EventId newID = ReSchedule (eventTimeStamp, (*iter).PeekEventImpl(), oldClock);
+      mysimImpl -> CancelRescheduling (*iter, newID);
     }
 }
 
@@ -145,16 +145,27 @@ LocalClock::LocalToGlobalAbs (Time localDelay)
 void 
 LocalClock::InsertEvent (EventId event)
 {
-  //NS_LOG_FUNCTION (this << event);
+  for (EventList::iterator i = m_events.begin (); i != m_events.end ();)
+  {
+    if (i->IsExpired ())
+    {
+      i = m_events.erase (i);
+    }
+    else
+    {
+      ++i;
+    }
+
+  }
   m_events.push_back (event);
 }
 
-void 
+EventId 
 LocalClock::ReSchedule (Time globalTimeStamp, EventImpl *impl, Ptr<ClockModelImpl> oldclock)
 {
   NS_LOG_FUNCTION (this << globalTimeStamp << impl);
   Time globalOldDurationRemain = globalTimeStamp - Simulator::Now ();
   Time localOldDurationRemain = oldclock->GlobalToLocalAbs (globalOldDurationRemain);
-  Simulator::Schedule (localOldDurationRemain, impl);
+  return Simulator::Schedule (localOldDurationRemain, impl);
 }
 }//namespace ns3

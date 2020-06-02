@@ -30,8 +30,9 @@ namespace ns3 {
  * 
  * @brief This class represents a perfect clock modelling. 
  * The mapping between the local time and global time is set by perfect linear function.
- *  The slope of the function is determined by the frequency value. So if for example the frequency is set to 2.
- * Local clock will be two times slower that the global time. When local time sais 2 global time will be saying 4. 
+ *  The slope of the function is determined by the frequency value differece. So if for example the frequency is set to 2.
+ * Local clock will be two times slower that the global time. When local time says 2 global time will be saying 4.
+ * Also a initial offest is possible to set up. So LT = f*GT + offset 
  */
 
 class PerfectClockModelImpl : public ClockModelImpl
@@ -51,8 +52,7 @@ public:
 private:
 //Frequency of the clock
   double m_frequency;
-// Pair of last update <locatime, simulatortime>
-  std::pair<Time,Time> m_timeUpdates;
+  Time m_offset;
 };
 
 

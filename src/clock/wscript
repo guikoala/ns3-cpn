@@ -11,7 +11,6 @@ def build(bld):
     module.source = [
         'model/clock-model-impl.cc',
         'model/adversarial-clock-model.cc',
-        'model/extended-event-id.cc',
         'model/local-clock.cc',
         'model/localtime-simulator-impl.cc',
         'model/perfect-clock-model-impl.cc',
@@ -28,7 +27,6 @@ def build(bld):
     headers.source = [
         'model/clock-model-impl.h',
         'model/adversarial-clock-model.h',
-        'model/extended-event-id.h',
         'model/local-clock.h',
         'model/localtime-simulator-impl.h',
         'model/perfect-clock-model-impl.h',

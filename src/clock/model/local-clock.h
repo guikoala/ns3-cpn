@@ -127,12 +127,13 @@ private:
    * \param impl Event implementation
    * \param oldClock Clock before the update 
    */
-  void ReSchedule (Time globalTimeStamp, EventImpl *impl, Ptr<ClockModelImpl> oldClock);
+  EventId ReSchedule (Time globalTimeStamp, EventImpl *impl, Ptr<ClockModelImpl> oldClock);
 
   //Clock implementation for the local clock
   Ptr<ClockModelImpl> m_clock;  
+  typedef std::list<EventId> EventList;
   //List of events schedulled by this node.           
-  std::list<EventId> m_events;      
+  EventList m_events;      
   
 };
 
