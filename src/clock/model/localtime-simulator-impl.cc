@@ -141,14 +141,16 @@ LocalTimeSimulatorImpl::ProcessOneEvent (void)
   Scheduler::Event next = m_events->RemoveNext ();
 
   //Do not process events that have been cancelled by a node due to clock update
-  for (CancelEvents::const_iterator it = m_eventCancelation.begin ();it !=m_eventCancelation.end ();it++)
+  CancelEventsMap::iterator it = m_cancelEventMap.begin();
+  while(it != m_cancelEventMap.end ())
   {
-    if (it -> GetUid () == next.key.m_uid)
+    if (it ->first == next.key.m_uid)
     {
       m_unscheduledEvents--;
-      m_eventCancelation.erase (it);
+      m_cancelEventMap.erase (it);
       return;
     }
+    it++;
   }
 
   NS_ASSERT (next.key.m_ts >= m_currentTs);
@@ -169,6 +171,7 @@ LocalTimeSimulatorImpl::ProcessOneEvent (void)
   }
   
   m_currentUid = next.key.m_uid;
+  NS_LOG_DEBUG ("EXECUTING EVENT ID " << m_currentUid);
   next.impl->Invoke ();
   next.impl->Unref ();
   ProcessEventsWithContext ();
@@ -247,7 +250,6 @@ LocalTimeSimulatorImpl::Schedule (Time const &localDelay, EventImpl *event)
 {
   NS_LOG_INFO (this << localDelay.GetTimeStep () << event);
   NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::Schedule Thread-unsafe invocation!");
-
   Time tAbsolute;
 
   //Avoid stop application events with 4294967295 context
@@ -269,7 +271,9 @@ LocalTimeSimulatorImpl::Schedule (Time const &localDelay, EventImpl *event)
   }
 
   Scheduler::Event ev = InsertScheduler (event,tAbsolute);
-  return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
+  EventId eventId = EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
+  NS_LOG_DEBUG ("SCHEDULING EVENT" << eventId.GetUid () << "AT TIME " << ev.key.m_ts);
+  return eventId;
 }
 
 Scheduler::Event 
@@ -343,7 +347,9 @@ LocalTimeSimulatorImpl::ScheduleNow (EventImpl *event)
   m_uid++;
   m_unscheduledEvents++;
   m_events->Insert (ev);
-  return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
+  EventId eventId = EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
+  clock -> InsertEvent (eventId);
+  return eventId;
 }
 
 EventId
@@ -405,7 +411,6 @@ LocalTimeSimulatorImpl::Remove (const EventId &id)
   event.impl->Cancel ();
   // whenever we remove an event from the event list, we have to unref it.
   event.impl->Unref ();
-
   m_unscheduledEvents--;
 }
 
@@ -413,6 +418,7 @@ void
 LocalTimeSimulatorImpl::Cancel (const EventId &id)
 {
   NS_LOG_FUNCTION (this);
+  NS_LOG_DEBUG ("CANCELING EVENT ID " << id.GetUid ());
   if (!IsExpired (id))
     {
       id.PeekEventImpl ()->Cancel ();
@@ -420,12 +426,14 @@ LocalTimeSimulatorImpl::Cancel (const EventId &id)
 }
 
 void
-LocalTimeSimulatorImpl::CancelRescheduling (const EventId &id)
+LocalTimeSimulatorImpl::CancelRescheduling (const EventId &id, const EventId &newId)
 {
   NS_LOG_FUNCTION (this);
   if (!IsExpired (id))
     {
       m_eventCancelation.push_back (id);    
+      m_cancelEventMap.insert (std::make_pair (id.GetUid (), newId));
+      NS_LOG_DEBUG ("EVENT CANCEL BECAUSE RESCHEDULING " << id.GetUid ());
     }
 }
 
@@ -449,16 +457,27 @@ LocalTimeSimulatorImpl::IsExpired (const EventId &id) const
         }
       return true;
     }
-  //If the event is been reschedule (So, is in eventcancelatio list) is not expired.
-  for (CancelEvents::const_iterator it = m_eventCancelation.begin (); it !=m_eventCancelation.end ();it++)
-  {//NOT solve
-    if (*it == id)
+  CancelEventsMap::const_iterator it = m_cancelEventMap.begin();
+  uint64_t realExecTime;
+  while(it != m_cancelEventMap.end ())
+  {
+    if (it ->first == id.GetUid ())
     {
-      if(it->GetTs () >= m_currentTs)
+      realExecTime = it->second.GetTs ();
+      if (m_currentTs < realExecTime)
+      {
+        return false;
+      }
+      else if (m_currentTs == realExecTime)
+      {
+        return true;
+      }
+      else if (m_currentTs > realExecTime)
       {
         return true;
       }
     }
+    it++;
   }
   
   if (id.PeekEventImpl () == 0 ||
