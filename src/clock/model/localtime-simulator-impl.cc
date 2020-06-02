@@ -144,10 +144,13 @@ LocalTimeSimulatorImpl::ProcessOneEvent (void)
   CancelEventsMap::iterator it = m_cancelEventMap.begin();
   while(it != m_cancelEventMap.end ())
   {
-    if (it ->first == next.key.m_uid)
+    if (it->first == next.key.m_uid)
     {
       m_unscheduledEvents--;
-      m_cancelEventMap.erase (it);
+      if (it->second.GetTs () < m_currentTs)
+      {
+        m_cancelEventMap.erase (it);
+      }
       return;
     }
     it++;
@@ -272,6 +275,7 @@ LocalTimeSimulatorImpl::Schedule (Time const &localDelay, EventImpl *event)
 
   Scheduler::Event ev = InsertScheduler (event,tAbsolute);
   EventId eventId = EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
+  NS_LOG_DEBUG("SCHEDULE EVENT  " << eventId.GetUid ());
   return eventId;
 }
 
@@ -313,6 +317,7 @@ LocalTimeSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &delay
       ev.key.m_uid = m_uid;
       m_uid++;
       m_unscheduledEvents++;
+      NS_LOG_DEBUG ("SCHEDULE WITH CONTEXT EVENT " << ev.key.m_uid);
       m_events->Insert (ev);
     }
   else
@@ -425,6 +430,7 @@ LocalTimeSimulatorImpl::CancelRescheduling (const EventId &id, const EventId &ne
   NS_LOG_FUNCTION (this);
   if (!IsExpired (id))
     {
+      NS_LOG_DEBUG("CANCEL DUE TO RESCHEDULING EVENT " << id.GetUid ());
       m_eventCancelation.push_back (id);    
       m_cancelEventMap.insert (std::make_pair (id.GetUid (), newId));
     }
@@ -433,6 +439,7 @@ LocalTimeSimulatorImpl::CancelRescheduling (const EventId &id, const EventId &ne
 bool
 LocalTimeSimulatorImpl::IsExpired (const EventId &id) const
 {
+  NS_LOG_FUNCTION (this);
   if (id.GetUid () == 2)
     {
       if (id.PeekEventImpl () == 0 ||
@@ -461,16 +468,18 @@ LocalTimeSimulatorImpl::IsExpired (const EventId &id) const
     {
       if (!it->second.IsExpired ())
       {
+        NS_LOG_DEBUG ("SECOND IS NOT EXPIRED .... -_----");
         return false;
       }
       else
       {
+        NS_LOG_DEBUG ("SECOND  NOT EXPIRED .... -_----");
         return true;
       }   
     }
     it++;
   }
-  
+  NS_LOG_DEBUG ("IS NOT IN THE LIST EVENT ----------" << id.GetUid ());
   if (id.PeekEventImpl () == 0 ||
       id.GetTs () < m_currentTs ||
       (id.GetTs () == m_currentTs &&
