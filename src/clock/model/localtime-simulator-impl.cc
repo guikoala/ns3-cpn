@@ -272,7 +272,6 @@ LocalTimeSimulatorImpl::Schedule (Time const &localDelay, EventImpl *event)
 
   Scheduler::Event ev = InsertScheduler (event,tAbsolute);
   EventId eventId = EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
-  NS_LOG_DEBUG ("SCHEDULING EVENT" << eventId.GetUid () << "AT TIME " << ev.key.m_ts);
   return eventId;
 }
 
@@ -293,7 +292,7 @@ LocalTimeSimulatorImpl::InsertScheduler (EventImpl *event, Time tAbsolute)
 Time
 LocalTimeSimulatorImpl::CalculateAbsoluteTime (Time delay)
 { 
-  NS_ASSERT_MSG (delay.IsPositive (), "DefaultSimulatorImpl::Schedule(): Negative delay");
+  NS_ASSERT_MSG (delay.IsPositive (), "LocalTimeSimulatorImpl::Schedule(): Negative delay");
   Time tAbsolute = delay + TimeStep (m_currentTs);
   return tAbsolute;
 }
@@ -336,19 +335,15 @@ LocalTimeSimulatorImpl::ScheduleNow (EventImpl *event)
 {
   NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::ScheduleNow Thread-unsafe invocation!");
 
-  Ptr <Node>  n = NodeList::GetNode (m_currentContext);
-  Ptr <LocalClock> clock = n -> GetObject <LocalClock> ();
-  Time globalTime = clock->LocalToGlobalTime (Now ());
   Scheduler::Event ev;
   ev.impl = event;
-  ev.key.m_ts = globalTime.GetTimeStep ();
+  ev.key.m_ts = m_currentTs;
   ev.key.m_context = GetContext ();
   ev.key.m_uid = m_uid;
   m_uid++;
   m_unscheduledEvents++;
   m_events->Insert (ev);
   EventId eventId = EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
-  clock -> InsertEvent (eventId);
   return eventId;
 }
 
@@ -418,7 +413,6 @@ void
 LocalTimeSimulatorImpl::Cancel (const EventId &id)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("CANCELING EVENT ID " << id.GetUid ());
   if (!IsExpired (id))
     {
       id.PeekEventImpl ()->Cancel ();
@@ -433,7 +427,6 @@ LocalTimeSimulatorImpl::CancelRescheduling (const EventId &id, const EventId &ne
     {
       m_eventCancelation.push_back (id);    
       m_cancelEventMap.insert (std::make_pair (id.GetUid (), newId));
-      NS_LOG_DEBUG ("EVENT CANCEL BECAUSE RESCHEDULING " << id.GetUid ());
     }
 }
 
@@ -457,25 +450,23 @@ LocalTimeSimulatorImpl::IsExpired (const EventId &id) const
         }
       return true;
     }
+
+  //Check the maping between events to ensure that events are expired. Event1 has been reschedule with the same implbut different time as Event2.
+  //When as for Event1 (that is been "cancacelled") need to know if Event2 is cancel. 
+
   CancelEventsMap::const_iterator it = m_cancelEventMap.begin();
-  uint64_t realExecTime;
-  while(it != m_cancelEventMap.end ())
+  while (it != m_cancelEventMap.end ())
   {
     if (it ->first == id.GetUid ())
     {
-      realExecTime = it->second.GetTs ();
-      if (m_currentTs < realExecTime)
+      if (!it->second.IsExpired ())
       {
         return false;
       }
-      else if (m_currentTs == realExecTime)
+      else
       {
         return true;
-      }
-      else if (m_currentTs > realExecTime)
-      {
-        return true;
-      }
+      }   
     }
     it++;
   }
