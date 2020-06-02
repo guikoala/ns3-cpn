@@ -20,15 +20,16 @@ public:
 
   void EventA (Time localTime, Time globalTime);
   void EventB (Time globalTime);
-  void EventC (Time localTime, Time globalTime, Time newTime);
+  void EventC ();
 
   void CreateNode ();
   void Send (Time t, Time checkTime);
   void ScheduleCheck (Time globalTime);
   void Eventfoo0 (void);
-  void NewFrequency ();
+  void NewFrequency (double freq, Time offset);
   void destroy (void);
   void Expired (EventId id);
+  void NotExpired (EventId id);
   bool m_b;
   bool m_a;
   bool m_destroy;
@@ -82,17 +83,18 @@ EventSchedulTestCase::EventB (Time globalTime)
 }
 
 void
-EventSchedulTestCase::EventC (Time localTime, Time globalTime, Time newTime)
+EventSchedulTestCase::EventC ()
 {
-  std::cout << "Event C Conte4xt" <<Simulator::GetContext () << std::endl;
-  std::cout << "Expected at "  << globalTime << "/" << localTime << "(sim/node)" << std::endl;
-  std::cout << "Event rescheduled executed at at simulator time" << Simulator::Now () << std::endl;
-  NS_TEST_ASSERT_MSG_EQ (newTime, Simulator::Now (), "Wrong rescheduling time");
+  std::cout << "EXECUTE EVENT C AT TIME : " << Simulator::Now () << std::endl;
 }
 
 void
 EventSchedulTestCase::Eventfoo0 (void)
-{}
+{
+  EventId id = Simulator::Schedule (Seconds (3), &EventSchedulTestCase::EventC, this);
+  //Check that the scheduled events that have been reschedule are still active even if their time has elapsed.
+  Simulator::ScheduleWithContext (0, Time (id.GetTs ())-Simulator::Now (), &EventSchedulTestCase::NotExpired, this, id);
+}
 
 void 
 EventSchedulTestCase::Send (Time t, Time checkTime)
@@ -107,12 +109,19 @@ EventSchedulTestCase::Expired (EventId id)
 }
 
 void
+EventSchedulTestCase::NotExpired (EventId id)
+{
+  NS_TEST_ASSERT_MSG_EQ (!id.IsExpired (), true, "Should have not expired");
+}
+
+void
 EventSchedulTestCase::CreateNode ()
 {
   m_node = CreateObject<Node> ();
   clock0 = CreateObject<LocalClock> ();
   m_clock = CreateObject<PerfectClockModelImpl> ();
   m_clock -> SetAttribute ("Frequency", DoubleValue (2));
+  m_clock -> SetAttribute ("Offset", TimeValue (Seconds (0)));
   clock0 -> SetAttribute ("ClockModelImpl", PointerValue (m_clock));
   m_node -> AggregateObject (clock0);
 }
@@ -125,11 +134,12 @@ EventSchedulTestCase::ScheduleCheck (Time globalTime)
 }
 
 void
-EventSchedulTestCase::NewFrequency ()
+EventSchedulTestCase::NewFrequency (double freq, Time offset)
 {
   std::cout << "Event New freq at " << Simulator::Now () << std::endl;
   Ptr<ClockModelImpl> newClock = CreateObject<PerfectClockModelImpl> ();
-  newClock -> SetAttribute ("Frequency", DoubleValue (4));
+  newClock -> SetAttribute ("Frequency", DoubleValue (freq));
+  newClock -> SetAttribute ("Offset", TimeValue (offset));
   clock0 -> SetClock (newClock);
 }
 
@@ -150,6 +160,8 @@ EventSchedulTestCase::DoSetup ()
   uint32_t id = 0;
   m_a = false;
   m_b = false;
+  double freq = 4;
+  Time offset = Seconds (0);
 
   Simulator::SetScheduler (m_schedulerFactory);
  //These events are scheduled without the clock freq, because are scheduled before run
@@ -158,16 +170,24 @@ EventSchedulTestCase::DoSetup ()
   EventId a = Simulator::Schedule (Seconds (2), &EventSchedulTestCase::Send, this, Seconds (1), Seconds (4));
   EventId b = Simulator::Schedule (Seconds (2), &EventSchedulTestCase::Send, this, Seconds (2), Seconds (6));
   EventId c = Simulator::Schedule (Seconds (3), &EventSchedulTestCase::Send, this, Seconds (3), Seconds (11));
-  
-  Simulator::Schedule (Seconds (7), &EventSchedulTestCase::NewFrequency, this);
-  Simulator::Schedule (Seconds (3), &EventSchedulTestCase::Expired, this, c);
 
+  EventId d1 = Simulator::Schedule (Seconds (4), &EventSchedulTestCase::Eventfoo0, this);//Schedule at 13
+  EventId d2 = Simulator::Schedule (Seconds (5), &EventSchedulTestCase::Eventfoo0, this);//Schedule at 14
+  EventId d3 = Simulator::Schedule (Seconds (6), &EventSchedulTestCase::Eventfoo0, this);//Schedule at 15
+
+  //schedule new clock with new offset
+  Simulator::Schedule (Seconds (7), &EventSchedulTestCase::NewFrequency, this, freq, offset);
+  //When schedule
+  //d1 is moved to 11
+  //d1 is moved to 13
+  //d1 is moved to 15
+  //d2 is moved to 17
 
   NS_TEST_EXPECT_MSG_EQ (!a.IsExpired (), true, "Event a expired when it shouldn't");
   NS_TEST_EXPECT_MSG_EQ (!b.IsExpired (), true, "Event a expired when it shouldn't");
   NS_TEST_EXPECT_MSG_EQ (!c.IsExpired (), true, "Event c should not have expired");
   Simulator::Cancel (a);
-  NS_TEST_EXPECT_MSG_EQ (a.IsExpired (), true, "Event a dind't expire");
+  NS_TEST_EXPECT_MSG_EQ (a.IsExpired (), true, "Event a didn't expire");
   Simulator::Run ();
   NS_TEST_EXPECT_MSG_EQ (m_a, true, "Event A did not run ?");
   NS_TEST_EXPECT_MSG_EQ (m_b, true, "Event B did not run ?");
@@ -201,9 +221,10 @@ EventSchedulTestCase::DoSetup ()
   Simulator::Destroy ();
   NS_TEST_EXPECT_MSG_EQ (m_destroyId.IsExpired (), true, "Event should have expired now");
   NS_TEST_EXPECT_MSG_EQ (m_destroy, true, "Event should have run");
-
-  
   Simulator::Run ();
+  
+
+
 
 }
 
