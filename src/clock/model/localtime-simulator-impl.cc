@@ -468,18 +468,15 @@ LocalTimeSimulatorImpl::IsExpired (const EventId &id) const
     {
       if (!it->second.IsExpired ())
       {
-        NS_LOG_DEBUG ("SECOND IS NOT EXPIRED .... -_----");
         return false;
       }
       else
       {
-        NS_LOG_DEBUG ("SECOND  NOT EXPIRED .... -_----");
         return true;
       }   
     }
     it++;
   }
-  NS_LOG_DEBUG ("IS NOT IN THE LIST EVENT ----------" << id.GetUid ());
   if (id.PeekEventImpl () == 0 ||
       id.GetTs () < m_currentTs ||
       (id.GetTs () == m_currentTs &&
