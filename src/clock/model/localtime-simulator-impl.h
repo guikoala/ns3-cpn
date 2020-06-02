@@ -22,6 +22,8 @@
 
 #include "ns3/default-simulator-impl.h"
 #include "ns3/local-clock.h"
+#include <map>
+
 
 
 
@@ -123,7 +125,7 @@ public:
    * 
    * \param id Event Id that want to be removed.
   */
-  void CancelRescheduling (const EventId &id);
+  void CancelRescheduling (const EventId &id, const EventId &newId);
 
 private:
 
@@ -182,6 +184,9 @@ private:
   typedef std::list<EventId> CancelEvents;
   /** List of events cancelled due to rescheduling */
   CancelEvents m_eventCancelation;
+
+  typedef std::map<uint32_t, EventId> CancelEventsMap;
+  CancelEventsMap m_cancelEventMap;
 
   /**
    * Number of events that have been inserted but not yet scheduled,
