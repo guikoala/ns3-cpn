@@ -25,6 +25,7 @@
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 #include "ns3/double.h"
+#include "ns3/timer.h"
 
 
 namespace ns3 {
@@ -40,10 +41,14 @@ PerfectClockModelImpl::GetTypeId (void)
     .SetParent<ClockModelImpl> ()
     .SetGroupName ("Clock")
     .AddConstructor<PerfectClockModelImpl> ()
-    .AddAttribute ("Frequency", "Frequency of the clock",
+    .AddAttribute ("Frequency", "Frequency difference between clocks",
                   DoubleValue(2),
                   MakeDoubleAccessor (&PerfectClockModelImpl::m_frequency),
                   MakeDoubleChecker <double> ())
+    .AddAttribute ("Offset", "Offset between clocks",
+                  TimeValue(Seconds (0.1)),
+                  MakeTimeAccessor (&PerfectClockModelImpl::m_offset),
+                  MakeTimeChecker ()) 
   ;
   return tid;
 }
@@ -51,8 +56,6 @@ PerfectClockModelImpl::GetTypeId (void)
 PerfectClockModelImpl::PerfectClockModelImpl ()
 {
   NS_LOG_FUNCTION (this);
-  m_timeUpdates.first = Simulator::Now();
-  m_timeUpdates.second = Simulator::Now();
   m_frequency = 2;
 }
 
@@ -68,6 +71,7 @@ PerfectClockModelImpl::GetLocalTime ()
   Time localTime;
   Time globalTime = Simulator::Now () ;
   localTime = GlobalToLocalTime(globalTime);
+  NS_LOG_DEBUG ("LOCALTIME " << localTime);
   return localTime;
 }
 
@@ -75,7 +79,7 @@ Time
 PerfectClockModelImpl::GlobalToLocalTime (Time globalTime)
 {
   NS_LOG_FUNCTION(this << globalTime);
-  Time localTime = Time (globalTime.GetDouble () / m_frequency); 
+  Time localTime = Time ((globalTime - m_offset).GetDouble () / m_frequency) + m_offset ; 
   return localTime;
 }
 
@@ -83,7 +87,7 @@ Time
 PerfectClockModelImpl::LocalToGlobalTime (Time localTime)
 {
   NS_LOG_FUNCTION (this << localTime);
-  Time globalTime = Time (localTime.GetDouble () * m_frequency); 
+  Time globalTime = Time ((localTime - m_offset).GetDouble () * m_frequency) + m_offset;
   return globalTime;
 }
 
@@ -105,7 +109,9 @@ PerfectClockModelImpl::LocalToGlobalAbs (Time localDelay)
   Time globalDelay;
   Time localTime = GetLocalTime ();
   Time globalAbsTime = LocalToGlobalTime (localDelay + localTime);
-  globalDelay = globalAbsTime -Simulator::Now ();
+  NS_LOG_DEBUG ("GLOBAL DELAY ABS " << globalAbsTime);
+  globalDelay = globalAbsTime - Simulator::Now ();
+  NS_LOG_DEBUG ("RETURNED TIME " << globalDelay);
   return globalDelay;
 }
 }
