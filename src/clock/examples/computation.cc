@@ -38,28 +38,27 @@ main (int argc, char *argv[])
   // for selected modules; the below lines suggest how to do this
   //
 
-  LogComponentEnable ("Computation", LOG_LEVEL_INFO);
+  //LogComponentEnable ("Computation", LOG_LEVEL_INFO);
 
 
-  int m_nodes =200;
+  int m_nodes =20;
   std::string AppPacketRate ("40Kbps");
   Config::SetDefault  ("ns3::OnOffApplication::PacketSize",StringValue ("1000"));
   Config::SetDefault ("ns3::OnOffApplication::DataRate",  StringValue (AppPacketRate));
   int port = 200;
   CommandLine cmd;
+  cmd.AddValue ("nodes","node of the sim", m_nodes);
   cmd.Parse (argc, argv);
 
 
   NS_LOG_INFO ("Number of nodes for the simulation " << m_nodes);
 
-  NS_LOG_INFO ("Create nodes.");
   NodeContainer terminals;
   terminals.Create (m_nodes);
 
   NodeContainer csmaSwitch;
   csmaSwitch.Create (1);
 
-  NS_LOG_INFO ("Build Topology");
   CsmaHelper csma;
   csma.SetChannelAttribute ("DataRate", DataRateValue (50000000));
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (0)));
@@ -135,7 +134,6 @@ main (int argc, char *argv[])
   // Now, do the actual simulation.
   //
 
-  NS_LOG_INFO ("Run Simulation.");
   Simulator::Run ();
   Simulator::Destroy ();
   NS_LOG_INFO ("Done.");
