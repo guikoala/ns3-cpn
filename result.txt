@@ -1,9 +1,23 @@
-FAIL: Test Suite "node-scheduling" (0.000)
+FAIL: Test Suite "node-scheduling" (0.010)
 FAIL: Test Suite "Check that basic event handling is working with ns3::ListScheduler" (0.000)
     Details:
-      Message:   Wrong local time
-      Condition: localTime (actual) == m_clock -> GetLocalTime () (limit)
-      Actual:    +4000000000.0ns
-      Limit:     +10000000000.0ns
+      Message:   Shoudl have not expired
+      Condition: !id.IsExpired () (actual) == true (limit)
+      Actual:    0
+      Limit:     1
       File:      ../src/clock/test/node-schedule-test.cc
-      Line:      99
+      Line:      114
+    Details:
+      Message:   Shoudl have not expired
+      Condition: !id.IsExpired () (actual) == true (limit)
+      Actual:    0
+      Limit:     1
+      File:      ../src/clock/test/node-schedule-test.cc
+      Line:      114
+    Details:
+      Message:   Shoudl have not expired
+      Condition: !id.IsExpired () (actual) == true (limit)
+      Actual:    0
+      Limit:     1
+      File:      ../src/clock/test/node-schedule-test.cc
+      Line:      114

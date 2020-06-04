@@ -1,0 +1,5 @@
+Number of nodes for the simulation 10
+Configure Tracing.
+Done.
+1.85user 0.12system 0:01.78elapsed 110%CPU (0avgtext+0avgdata 47336maxresident)k
+0inputs+1528outputs (0major+30556minor)pagefaults 0swaps
