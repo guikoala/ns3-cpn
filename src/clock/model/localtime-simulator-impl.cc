@@ -20,9 +20,12 @@
 
 
 #include "localtime-simulator-impl.h"
+#include "perfect-clock-model-impl.h"
+#include "ns3/double.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
 #include "ns3/ptr.h"
+#include "ns3/pointer.h"
 #include "ns3/assert.h"
 #include "ns3/node-list.h"
 #include "ns3/node.h"
@@ -265,6 +268,14 @@ LocalTimeSimulatorImpl::Schedule (Time const &localDelay, EventImpl *event)
     // Obtain nodes clock from the context
     Ptr <Node>  n = NodeList::GetNode (m_currentContext);
     Ptr <LocalClock> clock = n -> GetObject <LocalClock> ();
+    if (clock == nullptr)
+    {
+      //If there is no clock attach we create a perfectClock synchronazed with the simulator time
+      Ptr<PerfectClockModelImpl> perfectClock = CreateObject<PerfectClockModelImpl> ();
+      clock = CreateObject<LocalClock> ();
+      clock -> SetAttribute ("ClockModelImpl", PointerValue (perfectClock));
+      n -> AggregateObject (clock);
+    }
     Time globalTimeDelay = clock -> LocalToGlobalAbs (localDelay);
     tAbsolute = CalculateAbsoluteTime (globalTimeDelay);
     //Insert eventId in the list of scheduled events by the node.
