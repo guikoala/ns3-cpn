@@ -15,12 +15,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre 
+ * Author: Guillermo Aguirre <guillermoaguirre10@gmail.com>
  */
 #ifndef PERFECT_CLOCK_MODEL_IMPL_H
 #define PERFECT_CLOCK_MODEL_IMPL_H
 
-#include "ns3/clock-model-impl.h"
+#include "ns3/clock-model.h"
 #include "ns3/object.h"
 
 namespace ns3 {
@@ -29,13 +29,13 @@ namespace ns3 {
  * ns3::PerfectClockModelImpl declaration
  * 
  * @brief This class represents a perfect clock modelling. 
- * The mapping between the local time and global time is set by perfect linear function.
- *  The slope of the function is determined by the frequency value differece. So if for example the frequency is set to 2.
+ * The mapping between the local time and global time is set by an affine function.
+ * The slope of the function is determined by the frequency value differece. So if for example the frequency is set to 2.
  * Local clock will be two times slower that the global time. When local time says 2 global time will be saying 4.
  * Also a initial offest is possible to set up. So LT = f*GT + offset 
  */
 
-class PerfectClockModelImpl : public ClockModelImpl
+class PerfectClockModelImpl : public ClockModel
 {
 public:
   static TypeId GetTypeId (void);
@@ -46,8 +46,8 @@ public:
   Time GetLocalTime ();
   Time GlobalToLocalTime (Time globalTime);
   Time LocalToGlobalTime (Time localtime);
-  Time GlobalToLocalAbs (Time globaldDelay);
-  Time LocalToGlobalAbs (Time localdelay);
+  Time GlobalToLocalDelay (Time globaldDelay);
+  Time LocalToGlobalDelay (Time localdelay);
 
 private:
 //Frequency of the clock

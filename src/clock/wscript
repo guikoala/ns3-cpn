@@ -9,8 +9,8 @@
 def build(bld):
     module = bld.create_ns3_module('clock', ['core'])
     module.source = [
-        'model/clock-model-impl.cc',
-        'model/adversarial-clock-model.cc',
+        'model/clock-model.cc',
+        'model/periodic-clock-model.cc',
         'model/local-clock.cc',
         'model/localtime-simulator-impl.cc',
         'model/perfect-clock-model-impl.cc',
@@ -19,14 +19,14 @@ def build(bld):
 
     module_test = bld.create_ns3_module_test_library('clock',)
     module_test.source = [
-        'test/node-schedule-test.cc',
+        'test/clock-test.cc',
         ]
 
     headers = bld(features='ns3header')
     headers.module = 'clock'
     headers.source = [
-        'model/clock-model-impl.h',
-        'model/adversarial-clock-model.h',
+        'model/clock-model.h',
+        'model/periodic-clock-model.h',
         'model/local-clock.h',
         'model/localtime-simulator-impl.h',
         'model/perfect-clock-model-impl.h',

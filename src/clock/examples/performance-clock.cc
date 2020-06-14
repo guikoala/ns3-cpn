@@ -25,10 +25,27 @@
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/config-store.h"
+#include "ns3/clock-module.h"
 
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("Computation");
+
+
+void aggregateClock (double freq, Ptr<Node> node)
+{
+  Ptr<PerfectClockModelImpl> clockImpl = CreateObject<PerfectClockModelImpl> ();
+  clockImpl -> SetAttribute ("Frequency", DoubleValue (freq));
+  Ptr<LocalClock> clock0 = CreateObject<LocalClock> ();
+  clock0 -> SetAttribute ("ClockModel", PointerValue (clockImpl));
+  node -> AggregateObject (clock0);
+}
+
+void SetClock (Ptr<LocalClock> clock, Ptr<ClockModel> clockImpl, double freq)
+{
+  clockImpl -> SetAttribute ("Frequency", DoubleValue (freq));
+  clock -> SetClock (clockImpl);
+}
 
 int 
 main (int argc, char *argv[])
@@ -39,20 +56,24 @@ main (int argc, char *argv[])
   //
 
   //LogComponentEnable ("Computation", LOG_LEVEL_INFO);
+  //Set LocalTime Simulator Impl
+  GlobalValue::Bind ("SimulatorImplementationType", 
+                     StringValue ("ns3::LocalTimeSimulatorImpl"));
 
-
-  int m_nodes =200;
+  int m_nodes = 10;
   std::string AppPacketRate ("40Kbps");
   Config::SetDefault  ("ns3::OnOffApplication::PacketSize",StringValue ("1000"));
   Config::SetDefault ("ns3::OnOffApplication::DataRate",  StringValue (AppPacketRate));
-  int port = 200;
+  int port = 10;
+  double freq = 1.01;
   CommandLine cmd;
   cmd.AddValue ("nodes","node of the sim", m_nodes);
   cmd.Parse (argc, argv);
 
 
-  NS_LOG_INFO ("Number of nodes for the simulation " << m_nodes);
+  //NS_LOG_INFO ("Number of nodes for the simulation " << m_nodes);
 
+ 
   NodeContainer terminals;
   terminals.Create (m_nodes);
 
@@ -60,12 +81,13 @@ main (int argc, char *argv[])
   csmaSwitch.Create (1);
 
   CsmaHelper csma;
-  csma.SetChannelAttribute ("DataRate", DataRateValue (50000000));
+  csma.SetChannelAttribute ("DataRate", DataRateValue (500000000));
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (0)));
 
   // Create the csma links, from each terminal to the switch
    // Add internet stack to the terminals
   InternetStackHelper internet;
+ 
   internet.Install (terminals);
   NetDeviceContainer switchDevices;
   NetDeviceContainer terminalDevices;
@@ -76,12 +98,17 @@ main (int argc, char *argv[])
 
   for (int i = 0; i < m_nodes; i++)
     {
+      aggregateClock (freq, terminals.Get (i));
       NetDeviceContainer link = csma.Install (NodeContainer (terminals.Get (i), csmaSwitch));
       terminalDevices.Add (link.Get (0));
       switchDevices.Add (link.Get (1));
       ipv4.Assign (terminalDevices);
       ipv4.NewNetwork ();
     }
+
+  //Add clock to switch
+  aggregateClock (freq, csmaSwitch.Get (0));
+
   // Create the bridge netdevice, which will do the packet switching
   Ptr<Node> switchNode = csmaSwitch.Get (0);
   BridgeHelper bridge;
@@ -111,28 +138,18 @@ main (int argc, char *argv[])
     app.Start (Seconds (0.0));
   }
   
+  //Schedule for clock update
 
-  NS_LOG_INFO ("Configure Tracing.");
-
-  //
-  // Configure tracing of all enqueue, dequeue, and NetDevice receive events.
-  // Trace output will be sent to the file "csma-bridge.tr"
-  //
-  //AsciiTraceHelper ascii;
- //csma.EnableAsciiAll (ascii.CreateFileStream ("csma-bridge.tr"));
-
-  //
-  // Also configure some tcpdump traces; each interface will be traced.
-  // The output files will be named:
-  //     csma-bridge-<nodeId>-<interfaceId>.pcap
-  // and can be read by the "tcpdump -r" command (use "-tt" option to
-  // display timestamps correctly)
-  //
- // csma.EnablePcapAll ("csma-bridge", false);
-
-  //
-  // Now, do the actual simulation.
-  //
+  Ptr<LocalClock> clock;
+  Ptr<Node> node;
+  freq =1 ;
+  for (int i =0; i<m_nodes/2; i++)
+  {
+    Ptr<PerfectClockModelImpl> clockImpl = CreateObject<PerfectClockModelImpl> ();
+    node = terminals.Get (i);
+    clock = node -> GetObject <LocalClock> ();
+    Simulator::ScheduleWithContext (i, Seconds (7), &SetClock, clock, clockImpl, freq);
+  }
 
   Simulator::Run ();
   Simulator::Destroy ();

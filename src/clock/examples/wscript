@@ -2,11 +2,14 @@
 
 def build(bld):
 
-    obj = bld.create_ns3_program('two-clocks-example', ['clock', 'point-to-point', 'internet', 'applications','network'])
-    obj.source = 'two-clocks-example.cc'
+    obj = bld.create_ns3_program('two-clocks-simple', ['clock', 'point-to-point', 'internet', 'applications','network'])
+    obj.source = 'two-clocks-simple.cc'
 
     obj = bld.create_ns3_program('computation', ['clock', 'csma', 'internet', 'applications','bridge'])
     obj.source = 'computation.cc'
 
     obj = bld.create_ns3_program('computation-clock', ['clock', 'csma', 'internet', 'applications','bridge'])
     obj.source = 'computation-clock.cc'
+
+    obj = bld.create_ns3_program('performance-clock', ['clock', 'csma', 'internet', 'applications','bridge'])
+    obj.source = 'performance-clock.cc'

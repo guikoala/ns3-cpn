@@ -41,13 +41,6 @@ void aggregateClock (double freq, Ptr<Node> node)
   node -> AggregateObject (clock0);
 }
 
-void SetClock (Ptr<LocalClock> clock, Ptr<ClockModelImpl> clockImpl, double freq)
-{
-  NS_LOG_DEBUG ("Calling function set clock");
-  clockImpl -> SetAttribute ("Frequency", DoubleValue (freq));
-  clock -> SetClock (clockImpl);
-}
-
 int 
 main (int argc, char *argv[])
 {
@@ -56,7 +49,7 @@ main (int argc, char *argv[])
   // for selected modules; the below lines suggest how to do this
   //
 
-  LogComponentEnable ("Computation", LOG_LEVEL_INFO);
+  //LogComponentEnable ("Computation", LOG_LEVEL_INFO);
   //Set LocalTime Simulator Impl
   GlobalValue::Bind ("SimulatorImplementationType", 
                      StringValue ("ns3::LocalTimeSimulatorImpl"));
@@ -68,19 +61,19 @@ main (int argc, char *argv[])
   int port = 10;
   double freq = 1.01;
   CommandLine cmd;
+  cmd.AddValue ("nodes","node of the sim", m_nodes);
   cmd.Parse (argc, argv);
 
 
   NS_LOG_INFO ("Number of nodes for the simulation " << m_nodes);
 
-  NS_LOG_INFO ("Create nodes.");
+ 
   NodeContainer terminals;
   terminals.Create (m_nodes);
 
   NodeContainer csmaSwitch;
   csmaSwitch.Create (1);
 
-  NS_LOG_INFO ("Build Topology");
   CsmaHelper csma;
   csma.SetChannelAttribute ("DataRate", DataRateValue (50000000));
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (0)));
@@ -138,43 +131,7 @@ main (int argc, char *argv[])
     ApplicationContainer app = sink.Install (terminals.Get (1));
     app.Start (Seconds (0.0));
   }
-  
-  //Schedule for clock update
-  NS_LOG_INFO ("Schedule Updates");
-  Ptr<LocalClock> clock;
-  Ptr<Node> node;
-  freq =1 ;
-  /*for (int i =0; i<m_nodes/2; i++)
-  {
-    Ptr<PerfectClockModelImpl> clockImpl = CreateObject<PerfectClockModelImpl> ();
-    node = terminals.Get (i);
-    clock = node -> GetObject <LocalClock> ();
-    Simulator::ScheduleWithContext (i, Seconds (7), &SetClock, clock, clockImpl, freq);
-  }*/
 
-  NS_LOG_INFO ("Configure Tracing.");
-
-  //
-  // Configure tracing of all enqueue, dequeue, and NetDevice receive events.
-  // Trace output will be sent to the file "csma-bridge.tr"
-  //
-  //AsciiTraceHelper ascii;
- //csma.EnableAsciiAll (ascii.CreateFileStream ("csma-bridge.tr"));
-
-  //
-  // Also configure some tcpdump traces; each interface will be traced.
-  // The output files will be named:
-  //     csma-bridge-<nodeId>-<interfaceId>.pcap
-  // and can be read by the "tcpdump -r" command (use "-tt" option to
-  // display timestamps correctly)
-  //
-  //csma.EnablePcapAll ("csma-bridge", false);
-
-  //
-  // Now, do the actual simulation.
-  //
-
-  NS_LOG_INFO ("Run Simulation.");
   Simulator::Run ();
   Simulator::Destroy ();
   NS_LOG_INFO ("Done.");

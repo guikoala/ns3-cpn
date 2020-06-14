@@ -15,14 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre 
+ * Author: Guillermo Aguirre <guillermoaguirre10@gmail.com> 
  */
 #ifndef LOCAL_CLOCK_H
 #define LOCAL_CLOCK_H
 
 #include "ns3/object.h"
 #include "ns3/object-factory.h"
-#include "ns3/clock-model-impl.h"
+#include "ns3/clock-model.h"
 #include "ns3/scheduler.h"
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
@@ -38,7 +38,7 @@ namespace ns3 {
  * 
  * @brief This class represent the clock interface aggregate to each node. By aggregation we allow to LocalsimulatorImplementation access to this object
  * through the node.  
- * An object of this class has a unique attribute which represent the clock model behavioural (ClockModelImplementation) implemented in the node. 
+ * An object of this class has a unique attribute which represent the clock model behavioural (ClockModel) implemented in the node. 
  * This class allow to schedule events in local time and make the convertion between both domains (Local-Global). 
  * Also, allows updates of the clock model (SetClock function) by rescheduling events acording to the new clock model. E.g reception a NTP message with
  * clock parameters update.
@@ -60,9 +60,9 @@ public:
   LocalClock ();
 
   /**
-   * \param ClockModelImpl a implementation of a ClockModel Class.
+   * \param ClockModel a implementation of a ClockModel Class.
    */
-  LocalClock(Ptr<ClockModelImpl> clock);
+  LocalClock(Ptr<ClockModel> clock);
   ~LocalClock ();
 
   /**
@@ -77,9 +77,9 @@ public:
    * This function is going to be called every time a change on the node clock happens 
    * (ie: message update from NTP protocol). This function is going to be in charge of 
    * rescheduling the events when there is a change in the clock. 
-   * \param ClockModelImpl associate to this node.
+   * \param ClockModel associate to this node.
    */
-  void SetClock (Ptr<ClockModelImpl> new_clock_model);
+  void SetClock (Ptr<ClockModel> new_clock_model);
 
   /**
    * \brief Transform Time from Global (simulator time) to Local(Local Node Time).
@@ -100,13 +100,13 @@ public:
    * \param globalDelay time
    * \return  Local Absolute Time  
    */
-  Time GlobalToLocalAbs (Time globalDelay);
+  Time GlobalToLocalDelay (Time globalDelay);
   /**
    * \brief Transform absolute Time from Local (Local Node Time) to Global (simulator time).
    * \param localDelay time
    * \return Global Absolute Time  
    */
-  Time LocalToGlobalAbs (Time localDelay);
+  Time LocalToGlobalDelay (Time localDelay);
   
   /**
    * \brief Insert a event in m_events to keep track of the events scheduled by this node.  
@@ -127,10 +127,10 @@ private:
    * \param impl Event implementation
    * \param oldClock Clock before the update 
    */
-  EventId ReSchedule (Time globalTimeStamp, EventImpl *impl, Ptr<ClockModelImpl> oldClock);
+  EventId ReSchedule (Time globalTimeStamp, EventImpl *impl, Ptr<ClockModel> oldClock);
 
   //Clock implementation for the local clock
-  Ptr<ClockModelImpl> m_clock;  
+  Ptr<ClockModel> m_clock;  
   typedef std::list<EventId> EventList;
   //List of events schedulled by this node.           
   EventList m_events;      

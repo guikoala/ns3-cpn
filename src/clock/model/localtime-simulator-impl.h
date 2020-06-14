@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre 
+ * Author: Guillermo Aguirre <guillermoaguirre10@gmail.com> 
  */
 #ifndef LOCALTIME_SIMULATOR_IMPL_H
 #define LOCALTIME_SIMULATOR_IMPL_H
@@ -40,27 +40,29 @@ namespace ns3{
  * 
  * @brief Implementation of single process simulator based on node local time.
  * This class slighly differ from the default simulator implementation.
- * The purpose of this class is to provide to the simulator the capanility to manage different timing references
+ * The purpose of this class is to provide to the simulator the capability to manage different timing references
  * within the nodes of the network.
  * This class provide the posibility to schedule events with different notion of time and to reschedule events
  * when clock update happens during the simulation.
  * For that a new functionality is provide to the Schedule function. Note that ScheduleWithContext function remain the same a in the defaultsimulatorImpl.
- * This is because in the mayority of the times a calle to ScheduleWithContext happen, is due to a packet transmission within the channel. The delay that 
- * is introduced in that call is normally the channel transmission time (As in CsmaNetDevice), which doesn't depend on the node clock. Because of that, 
+ * This is because in the mayority of the times a call to ScheduleWithContext happen, is due to a packet transmission within the channel. The delay that 
+ * is introduced in that call is normally the channel transmission time (As in CsmaNetDevice), which does not depend on the nodes clock. Because of that, 
  * this function remain unchanged. 
  * 
  * Schedule function allows to retrieve from the conext the node that is scheduling the events. After retrieving the node, the Localclock object 
- * is accessed trhough the aggregation system. This new functionality, is just possible if a LocalClock object has been aggregated before to the node.
- * It permits to attach to each in the simulation different time notions.
- * Context with number 4294967295 that are set after application stop events are skiped.
+ * is accessed trhough the aggregation system. This new functionality, is just possible if a LocalClock object has been aggregated. (If not aggregated
+ * before one perfect clock syncrhonized with the simulator time is attached to the node).
+ * It permits to attach to each node in the simulation different time notions. 
  * 
  *  This class also provide the posibilty to the nodes to cancel events due to a clock update event. Imagine that a node receive a clock update 
- * message. All the events that has been scheduled by that node need to be reschedule at the proper time. This class maintains a list of cancel events 
- * by the nodes. Node don't cancell the events directly because if Simulator::Cancel () or Simulator::Destory() there is no way to recover the event 
- * implementation. This has been done in this way becuase the base code of EventImpl doesn't provide a copy contructor. 
- * So, ones the eventImpl is cancell there is no way that the event can be reschedule. 
+ * message. All the events that has been scheduled by the node need to be reschedule at the proper time. This class maintains a list of cancel events 
+ * by the nodes. Node don't cancell the events directly because if Simulator::Cancel () or Simulator::Destroy() are called there is no way to recover the event 
+ * implementation. 
  * To over come from that situation, the simulator maintains a list with all the cancelled events by the nodes. When procesing an event, the simulator checks
  * first if the event has been cancelled. If yes it discard the event, if not it execute.
+ * 
+ * It has to be taken into account that when Schedule () function is called, the time parameter is in localtime. However, when Now() function
+ * is called, the return value is in globaltime.
  * 
  */
 
@@ -87,7 +89,6 @@ public:
     virtual EventId ScheduleNow (EventImpl *event);
     virtual EventId ScheduleDestroy (EventImpl *event);
     virtual void Remove (const EventId &id);
-    virtual bool IsExpired (const EventId &id) const;
     virtual void Run (void);
     virtual Time Now (void) const;
     virtual Time GetDelayLeft (const EventId &id) const;
@@ -96,32 +97,30 @@ public:
     virtual uint32_t GetSystemId (void) const;
     virtual uint32_t GetContext (void) const;
     virtual uint64_t GetEventCount (void) const;
+    virtual void Cancel (const EventId &id);
 
     virtual void DoDispose (void);
 
     
-
-
+  /**
+   *  \brief This function apart from what it provides in DefaultSimulatorImpl, provides also a way to chech if events that have been reschedule due
+   * to a clock update are expired.
+   *  
+   * \param id Event id to check
+   */
+  virtual bool IsExpired (const EventId &id) const;
   /**
    *  \brief This function provides a mechanism to translate the delay which is based on the node local time. 
-   * The node implementation is obtained through the node list and the current context.
+   * The node is obtained through the node list and the current context.
    * 
    * \param delay Delay in time measured in localtime
    * \param event Event implementation
    */
   virtual EventId Schedule (const Time &delay, EventImpl *event);
-  /**
-  * \brief Every time a there is a cancel call ensure if the cancel comes from a rescheduling event 
-  * due to a clock change. If the cancel call is due to a rescehduling, we insert those events 
-  * in m_eventCancelation but we dont set the flag m_cancel on eventImpl so we can reschedule afterards.
-  * 
-  * \param 
-  */
-  virtual void Cancel (const EventId &id);
 
   /**
-   * \brief This function is only call when the node is when a node whats to reschedule a function. Instead of calling to cancel() it shoudl call to
-   * CancelRescheduling. Cancel() method will invalidate the event implementation and would be impossible to reschedule the event with anoter time. 
+   * \brief This function is only call when the node  reschedule an event. Instead of calling to cancel() it shoudl call to
+   * CancelRescheduling. Cancel() method will invalidate the event implementation and would be impossible to reschedule the event with another time. 
    * 
    * \param id Event Id that want to be removed.
   */
@@ -180,12 +179,11 @@ private:
   uint32_t m_currentContext;
   /** The event count. */
   uint64_t m_eventCount;
-  /** Container type for the events that has been cancelled due to rescheduling */
-  typedef std::list<EventId> CancelEvents;
-  /** List of events cancelled due to rescheduling */
-  CancelEvents m_eventCancelation;
-
+  /** Container type for the events that has been cancelled due to rescheduling. Map between the old event id and the new event that has been 
+   * reschedule
+  */
   typedef std::map<uint32_t, EventId> CancelEventsMap;
+
   CancelEventsMap m_cancelEventMap;
 
   /**

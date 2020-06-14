@@ -1,9 +1,2 @@
-FAIL: Test Suite "node-scheduling" (0.000)
-FAIL: Test Suite "Check that basic event handling is working with ns3::ListScheduler" (0.000)
-    Details:
-      Message:   Wrong local time
-      Condition: localTime (actual) == m_clock -> GetLocalTime () (limit)
-      Actual:    +4000000000.0ns
-      Limit:     +10000000000.0ns
-      File:      ../src/clock/test/node-schedule-test.cc
-      Line:      99
+PASS: Test Suite "clock-test" (0.010)
+PASS: Test Suite "Check that basic event handling is working with ns3::ListScheduler" (0.000)
