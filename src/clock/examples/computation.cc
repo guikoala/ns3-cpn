@@ -41,7 +41,7 @@ main (int argc, char *argv[])
   //LogComponentEnable ("Computation", LOG_LEVEL_INFO);
 
 
-  int m_nodes =20;
+  int m_nodes =200;
   std::string AppPacketRate ("40Kbps");
   Config::SetDefault  ("ns3::OnOffApplication::PacketSize",StringValue ("1000"));
   Config::SetDefault ("ns3::OnOffApplication::DataRate",  StringValue (AppPacketRate));

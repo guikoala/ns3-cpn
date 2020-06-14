@@ -18,14 +18,14 @@ class EventSchedulTestCase : public TestCase
 public:
   EventSchedulTestCase (std::string descr, ObjectFactory schedulerFactory);
 
-  void EventA (Time localTime, Time globalTime);
+  void EventA ();
   void EventB (Time globalTime);
   void EventC ();
+  void EventD ();
 
   void CreateNode ();
   void Send (Time t, Time checkTime);
   void ScheduleCheck (Time globalTime);
-  void Eventfoo0 (void);
   void NewFrequency (double freq, Time offset);
   void destroy (void);
   void Expired (EventId id);
@@ -40,7 +40,7 @@ public:
   virtual void DoSetup ();
  
   Ptr<Node> m_node;
-  Ptr<ClockModelImpl> m_clock;
+  Ptr<ClockModel> m_clock;
   Ptr<LocalClock> clock0;
   ObjectFactory m_schedulerFactory;
 
@@ -48,12 +48,11 @@ public:
 
 /**
 * This test aim to check that events are scheduled according to a global time shifted 
-* from a local time.  
+* from a local time. 
 * This test work just with the perfect clock impl, however is not the purpose of this test to evaluate the perfomance of the 
-* clock implementation itself. The purpose is to validate that the node is able to schedule event with it's own notion of time. 
-* This test schedule 2 events, it checks that the first event is scheduled according to
-* node clock freqeuncy. Second event is rescheduled due to a clock change. The test checks 
-* that the event has been rescheduled in the proper time. 
+* clock implementation itself. The purpose is to validate that the node is able to schedule event with it's own notion of time and reshcedule them
+* when it is needed. Also check the good perfomance of the interface.
+* 
 */
 
 EventSchedulTestCase::EventSchedulTestCase (
@@ -70,7 +69,7 @@ EventSchedulTestCase::~EventSchedulTestCase ()
 }
 
 void 
-EventSchedulTestCase::EventA (Time localTime, Time globalTime)
+EventSchedulTestCase::EventA ()
 {
   m_a = true;
 }
@@ -89,10 +88,9 @@ EventSchedulTestCase::EventC ()
 }
 
 void
-EventSchedulTestCase::Eventfoo0 (void)
+EventSchedulTestCase::EventD ()
 {
   EventId id = Simulator::Schedule (Seconds (3), &EventSchedulTestCase::EventC, this);
-  //Check that the scheduled events that have been reschedule are still active even if their time has elapsed.
   Simulator::ScheduleWithContext (0, Time (id.GetTs ())-Simulator::Now (), &EventSchedulTestCase::NotExpired, this, id);
 }
 
@@ -120,16 +118,16 @@ EventSchedulTestCase::CreateNode ()
   m_node = CreateObject<Node> ();
   clock0 = CreateObject<LocalClock> ();
   m_clock = CreateObject<PerfectClockModelImpl> ();
-  m_clock -> SetAttribute ("Frequency", DoubleValue (2));
+  m_clock -> SetAttribute ("Frequency", DoubleValue (0.5));
   m_clock -> SetAttribute ("Offset", TimeValue (Seconds (0)));
-  clock0 -> SetAttribute ("ClockModelImpl", PointerValue (m_clock));
+  clock0 -> SetAttribute ("ClockModel", PointerValue (m_clock));
   m_node -> AggregateObject (clock0);
 }
 
 void 
 EventSchedulTestCase::ScheduleCheck (Time globalTime)
 {
-  std::cout << " Expected at "  << globalTime << "(sim/node)" << std::endl;
+  std::cout << " Expected at "  << globalTime << Simulator::Now () << "(node/sim)" << std::endl;
   NS_TEST_ASSERT_MSG_EQ (globalTime, Simulator::Now (), "Wrong global time");
 }
 
@@ -137,7 +135,7 @@ void
 EventSchedulTestCase::NewFrequency (double freq, Time offset)
 {
   std::cout << "Event New freq at " << Simulator::Now () << std::endl;
-  Ptr<ClockModelImpl> newClock = CreateObject<PerfectClockModelImpl> ();
+  Ptr<ClockModel> newClock = CreateObject<PerfectClockModelImpl> ();
   newClock -> SetAttribute ("Frequency", DoubleValue (freq));
   newClock -> SetAttribute ("Offset", TimeValue (offset));
   clock0 -> SetClock (newClock);
@@ -156,33 +154,46 @@ EventSchedulTestCase::DoSetup ()
 {  
   GlobalValue::Bind ("SimulatorImplementationType", 
                      StringValue ("ns3::LocalTimeSimulatorImpl"));
+  
+  // Create node and add perfect clock
   CreateNode ();
   uint32_t id = 0;
   m_a = false;
   m_b = false;
-  double freq = 4;
+  //New freq and offset when clock update
+  double newfreq = 0.25;
   Time offset = Seconds (0);
 
   Simulator::SetScheduler (m_schedulerFactory);
  //These events are scheduled without the clock freq, because are scheduled before run
 
-  Simulator::ScheduleWithContext (id, Seconds (1), &EventSchedulTestCase::EventA, this, Seconds (1), Seconds (2));
+  //Set the context-> This case 1 node, so context = 0
+  Simulator::ScheduleWithContext (id, Seconds (1), &EventSchedulTestCase::EventA, this);
+  //Event a in local time 3 global time 4
   EventId a = Simulator::Schedule (Seconds (2), &EventSchedulTestCase::Send, this, Seconds (1), Seconds (4));
+  //Event b in local time 4 global time 6
   EventId b = Simulator::Schedule (Seconds (2), &EventSchedulTestCase::Send, this, Seconds (2), Seconds (6));
+  //Event c in local time 6 expected at global time 9 but reshedule at global time 11 due to the clock update
   EventId c = Simulator::Schedule (Seconds (3), &EventSchedulTestCase::Send, this, Seconds (3), Seconds (11));
 
-  EventId d1 = Simulator::Schedule (Seconds (4), &EventSchedulTestCase::Eventfoo0, this);//Schedule at 13
-  EventId d2 = Simulator::Schedule (Seconds (5), &EventSchedulTestCase::Eventfoo0, this);//Schedule at 14
-  EventId d3 = Simulator::Schedule (Seconds (6), &EventSchedulTestCase::Eventfoo0, this);//Schedule at 15
+  //This events are scheduled in order to check if events are expired even when they are rescheduled.
+  //These events are scheduled with a delay measured in local time of 3 seconds as stated in eventD function
+  //Check that the scheduled events that have been reschedule are still active even if their origial time has elapsed. This is the case
+  // when an application schedule an event but that event is reshedule. A new event is created with the same implementation
+  // but the original event is not update with the new time. However if the application ask if it is expired the simulator should take into account
+  // the new event generated. 
 
-  //schedule new clock with new offset
-  Simulator::Schedule (Seconds (7), &EventSchedulTestCase::NewFrequency, this, freq, offset);
-  //When schedule
-  //d1 is moved to 11
-  //d1 is moved to 13
-  //d1 is moved to 15
-  //d2 is moved to 17
+  //Event d1 in local time 7 expected at global time 10 but reshedule at global time 13 due to the clock update
+  EventId d1 = Simulator::Schedule (Seconds (4), &EventSchedulTestCase::EventD, this);
+  //Event d1 in local time 8 expected at global time 14 but reshedule at global time 15 due to the clock update
+  EventId d2 = Simulator::Schedule (Seconds (5), &EventSchedulTestCase::EventD, this);
+  //Event d1 in local time 9 expected at global time 14 but reshedule at global time 17 due to the clock update
+  EventId d3 = Simulator::Schedule (Seconds (6), &EventSchedulTestCase::EventD, this);
 
+  //Schedule new clock with new offset
+  Simulator::Schedule (Seconds (7), &EventSchedulTestCase::NewFrequency, this, newfreq, offset);
+ 
+  // Basic check, similar to the test of default implementation 
   NS_TEST_EXPECT_MSG_EQ (!a.IsExpired (), true, "Event a expired when it shouldn't");
   NS_TEST_EXPECT_MSG_EQ (!b.IsExpired (), true, "Event a expired when it shouldn't");
   NS_TEST_EXPECT_MSG_EQ (!c.IsExpired (), true, "Event c should not have expired");
@@ -192,7 +203,7 @@ EventSchedulTestCase::DoSetup ()
   NS_TEST_EXPECT_MSG_EQ (m_a, true, "Event A did not run ?");
   NS_TEST_EXPECT_MSG_EQ (m_b, true, "Event B did not run ?");
 
-  EventId anId = Simulator::ScheduleNow (&EventSchedulTestCase::Eventfoo0, this);
+  EventId anId = Simulator::ScheduleNow (&EventSchedulTestCase::EventD, this);
   EventId anotherId = anId;
   NS_TEST_EXPECT_MSG_EQ (!(anId.IsExpired () || anotherId.IsExpired ()), true, "Event should not have expired yet.");
 
@@ -241,7 +252,7 @@ class LocalSimulatorTestSuite : public TestSuite
 {
 public:
   LocalSimulatorTestSuite ()
-  :TestSuite ("node-scheduling", UNIT)
+  :TestSuite ("clock-test", UNIT)
   {
     ObjectFactory factory;
     factory.SetTypeId (ListScheduler::GetTypeId ());

@@ -37,11 +37,11 @@ void aggregateClock (double freq, Ptr<Node> node)
   Ptr<PerfectClockModelImpl> clockImpl = CreateObject<PerfectClockModelImpl> ();
   clockImpl -> SetAttribute ("Frequency", DoubleValue (freq));
   Ptr<LocalClock> clock0 = CreateObject<LocalClock> ();
-  clock0 -> SetAttribute ("ClockModelImpl", PointerValue (clockImpl));
+  clock0 -> SetAttribute ("ClockModel", PointerValue (clockImpl));
   node -> AggregateObject (clock0);
 }
 
-void SetClock (Ptr<LocalClock> clock, Ptr<ClockModelImpl> clockImpl, double freq)
+void SetClock (Ptr<LocalClock> clock, Ptr<ClockModel> clockImpl, double freq)
 {
   clockImpl -> SetAttribute ("Frequency", DoubleValue (freq));
   clock -> SetClock (clockImpl);
@@ -81,7 +81,7 @@ main (int argc, char *argv[])
   csmaSwitch.Create (1);
 
   CsmaHelper csma;
-  csma.SetChannelAttribute ("DataRate", DataRateValue (50000000));
+  csma.SetChannelAttribute ("DataRate", DataRateValue (500000000));
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (0)));
 
   // Create the csma links, from each terminal to the switch

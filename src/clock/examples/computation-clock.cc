@@ -54,7 +54,7 @@ main (int argc, char *argv[])
   GlobalValue::Bind ("SimulatorImplementationType", 
                      StringValue ("ns3::LocalTimeSimulatorImpl"));
 
-  int m_nodes = 10;
+  int m_nodes = 200;
   std::string AppPacketRate ("40Kbps");
   Config::SetDefault  ("ns3::OnOffApplication::PacketSize",StringValue ("1000"));
   Config::SetDefault ("ns3::OnOffApplication::DataRate",  StringValue (AppPacketRate));

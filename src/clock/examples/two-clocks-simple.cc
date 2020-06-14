@@ -25,14 +25,29 @@
 #include "ns3/gnuplot-helper.h"
 
 /**
- * This example shows the basic stepts that are needed to configure a clock in a node. 
- * First, a LocalClock object must be aggregated to the node. The local simulator will use 
- * this aggregated clock to access to the clock. This LocalClock object has as a main attributte the ClockModelImpl.
- * The ClockModelImpl is the object that is in charge of translating the time between local domain and global domain. 
+ * This example shows the basic steps that are needed to configure a clock in a node. 
+ * First the global simulor variable must be change in order to redirect all the call to Simulator:: to the LocalTimeSimulatorImpl.
+ * 
+ * GlobalValue::Bind ("SimulatorImplementationType", 
+                     StringValue ("ns3::LocalTimeSimulatorImpl"));
+
+ * A ClockModel object implementation must be created. Is the object that is in charge of translating the time between local domain and global domain. 
  * In this case, a PerfectClockImpl.
+ * 
+ * Ptr<PerfectClockModelImpl> clockImpl0 = CreateObject <PerfectClockModelImpl> ();
+ * 
+ * A LocalClock object must be created and aggregated to the node. The local simulator will use this aggregated clock to access to the clock model. 
+ * 
+ * Ptr<LocalClock> clock0 = CreateObject<LocalClock> ();
+ * n1 -> AggregateObject (clock0);
+ * 
+ * This LocalClock object has as a main attributte the ClockModel.
+ * 
+ * clock0 -> SetAttribute ("ClockModel", PointerValue (clockImpl0));
+ * 
  * Once the attribute is been set and the object is been aggregated to the node no further installations must be done. 
  * 
- * In this example a basic network configuration is set up. Two nodes which are connected throught a Point to Point device and channel.
+ * In this example a basic network configuration is set up. Two nodes, which are connected throught a Point to Point device and channel.
  * The main point of this example is that each node runs a different clock configurations. 
  * 
  * 
@@ -41,16 +56,17 @@
  *   n1-----------------------n2
  * clock1                   clock2
  * 
- * As the application, the UdpEchoClientApplication and UdpEchoServerApplication is used. This allows as to configure the interval time between packets.
- * This interval time configure by the attribute system represent the interval time measure by the local time. 
- * As it can be observed in the traces generated, the local time is adjusted depending on the frequency and ofsset set on the node. 
- * For the clock model implementation, PerfectClockModelImpl has been used. This class allows to recreate a linear function with an slope and 
- * offset to shape clock difference. In order to give a more realistic approach and to simulate a clock variation (e.g due to a recepetion on 
- * the synchronization message) the clock get update every ten seconds with a new offset a a new frequency. If we map this shape in a 2D plane 
- * with the x axis measure in global time and y axis measure in local time, we would get a function compose with affine functions with continuity 
- * in the extremes. This for 0 to x1 value we have one affine function with slope and offset. From x1 to x2 the affine function change but always
- * with continuity at the verge. x1,x2------n reprenset the clock updates. This, could be also done by implementing a clockmodel with 
- * if statements without need of the clock update. 
+ * As the application model, the UdpEchoClientApplication and UdpEchoServerApplication is used. This allows as to configure the interval time between packets.
+ * This interval time configured by the attribute system represent the interval time measure by the local time. 
+ * 
+ * As it can be observed, in the traces generated, the local time is adjusted depending on the frequency and ofsset set on the node. 
+ * For the clock model implementation, PerfectClockModelImpl has been used. This class allows to recreate a linear function with an slope and an
+ * offset. 
+ * In order to simulate a clock variation within a node, the clock model is updated every twenty seconds with a new offset and a new frequency. 
+ * If we map this shape in a plane with the x axis measure in global time and y axis measure in local time, we would get a function compose with 
+ * different affine functions with continuity in the extremes. For 0 to x1 value we have one affine function with slope and offset. From x1 to x2 another
+ * affine function, etc. x1,x2------n reprenset the global time at which the clock is updated. This, could be also done by implementing a clockmodel with 
+ * if statements, without the need of clock updates. 
  * 
  * |LocalTime
  * |           /
@@ -99,21 +115,21 @@ main (int argc, char *argv[])
   //Aggregate clock 
   //Create both clocks, however
   Time init_offset = Seconds (0);
-  double freq=1;
+  double freq = 1;
 
   Ptr<PerfectClockModelImpl> clockImpl0 = CreateObject <PerfectClockModelImpl> ();
   Ptr<PerfectClockModelImpl> clockImpl1 = CreateObject <PerfectClockModelImpl> ();
 
-  clockImpl0 -> SetAttribute ("Frequency", DoubleValue (1));
-  clockImpl1 -> SetAttribute ("Frequency", DoubleValue (1));
+  clockImpl0 -> SetAttribute ("Frequency", DoubleValue (freq));
+  clockImpl1 -> SetAttribute ("Frequency", DoubleValue (freq));
   clockImpl0 -> SetAttribute ("Offset", TimeValue (init_offset));
   clockImpl1 -> SetAttribute ("Offset", TimeValue (init_offset));
 
   Ptr<LocalClock> clock0 = CreateObject<LocalClock> ();
   Ptr<LocalClock> clock1 = CreateObject<LocalClock> ();
 
-  clock0 -> SetAttribute ("ClockModelImpl", PointerValue (clockImpl0));
-  clock1 -> SetAttribute ("ClockModelImpl", PointerValue (clockImpl1));
+  clock0 -> SetAttribute ("ClockModel", PointerValue (clockImpl0));
+  clock1 -> SetAttribute ("ClockModel", PointerValue (clockImpl1));
 
   Ptr<Node> n1 = nodes.Get (0);
   Ptr<Node> n2 = nodes.Get (1); 
@@ -155,24 +171,28 @@ main (int argc, char *argv[])
 
 
   //Clock update. Here clock update are scheduled beforehand
-
   int j=0; //variable to swap between clocks every 20 seconds
+  double newFreq;
  
-  Ptr<ClockModelImpl> clockImpl;
+  Ptr<ClockModel> clockImpl;
   
-  for (int i=20;i<maxTime;i+=10)
+  for (int i=20;i<maxTime;i+=20)
   {
     if (j==0)
     {
-      freq=0.9; //With this freq node1 runs faster than global clock
-      init_offset += Seconds (i); //Adjust offset
+      newFreq = 1.1;
+      //init_offset = Time::FromDouble ((freq - newFreq)* i, Time::S) - init_offset; //Adjust offset
+      freq = newFreq; //With this freq node1 runs faster than global clock
       j=1; 
+      std::cout << "OFFSET" << init_offset << std::endl;
     }
     else
     {     
-      freq=2; //With this freq node1 runs slower than global clock
-      init_offset += Seconds (i); //Adjust offset
+      newFreq = 0.5;
+      init_offset = Time::FromDouble ((freq - newFreq)* i, Time::S) - init_offset; //Adjust offset
+      freq = newFreq; //With this freq node1 runs slower than global clock
       j=0;
+      std::cout << "OFFSET" << init_offset << std::endl;
     }
     Simulator::ScheduleWithContext (0, Seconds (i), &setClock, clock0, freq, init_offset);
   }

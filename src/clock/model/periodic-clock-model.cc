@@ -15,70 +15,68 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre,
- * Obtained from Matthieu.coudron <matthieu.coudron@lip6.fr> implementation. 
- * Perfect Clock class is just for testing purpose. 
+ * Author: Guillermo Aguirre <guillermoaguirre10@gmail.com>
  */
-// TODO Logging 
 
-#include "adversarial-clock-model.h"
+
+#include "periodic-clock-model.h"
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 #include "ns3/double.h"
 
 namespace ns3{
 
-NS_LOG_COMPONENT_DEFINE ("AdversarialClock");
+NS_LOG_COMPONENT_DEFINE ("PeriodicClock");
 
-NS_OBJECT_ENSURE_REGISTERED (AdversarialClock);  
+NS_OBJECT_ENSURE_REGISTERED (PeriodicClock);  
 
 TypeId
-AdversarialClock::GetTypeId (void)
+PeriodicClock::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::AdversarialClock")
-    .SetParent<ClockModelImpl> ()
+  static TypeId tid = TypeId ("ns3::PeriodicClock")
+    .SetParent<ClockModel> ()
     .SetGroupName ("Clock")
-    .AddConstructor<AdversarialClock> ()
+    .AddConstructor<PeriodicClock> ()
     .AddAttribute ("Delta", "",
                   TimeValue(MicroSeconds(1)),
-                  MakeTimeAccessor (&AdversarialClock::m_delta),
+                  MakeTimeAccessor (&PeriodicClock::m_delta),
                   MakeTimeChecker ())
     .AddAttribute ("Period", "",
                   TimeValue(MicroSeconds(1)),
-                  MakeTimeAccessor (&AdversarialClock::m_period),
+                  MakeTimeAccessor (&PeriodicClock::m_period),
                   MakeTimeChecker ())
     .AddAttribute ("Rho", "",
                   TimeValue(MicroSeconds(1)),
-                  MakeTimeAccessor (&AdversarialClock::m_rho),
+                  MakeTimeAccessor (&PeriodicClock::m_rho),
                   MakeTimeChecker ())        
     .AddAttribute ("Slope", "",
                   DoubleValue (1.5),
-                  MakeDoubleAccessor (&AdversarialClock::m_slope),
+                  MakeDoubleAccessor (&PeriodicClock::m_slope),
                   MakeDoubleChecker <double> ())
     .AddAttribute ("Interval", "",
                   TimeValue(MicroSeconds(1)),
-                  MakeTimeAccessor (&AdversarialClock::m_interval),
+                  MakeTimeAccessor (&PeriodicClock::m_interval),
                   MakeTimeChecker ())
     .AddAttribute ("xvalueGlobal", "",
                   TimeValue(MicroSeconds(1)),
-                  MakeTimeAccessor (&AdversarialClock::m_xjglobal),
+                  MakeTimeAccessor (&PeriodicClock::m_xjglobal),
                   MakeTimeChecker ())                            
   ;
   return tid;
 }
 
-AdversarialClock::AdversarialClock ()
+PeriodicClock::PeriodicClock ()
 {
   NS_LOG_FUNCTION (this);
   
 }
-AdversarialClock::~AdversarialClock ()
+PeriodicClock::~PeriodicClock ()
 {
   NS_LOG_FUNCTION (this);
 }
 
 Time
-AdversarialClock::GetLocalTime ()
+PeriodicClock::GetLocalTime ()
 {
   NS_LOG_FUNCTION (this);
   Time ret;
@@ -87,7 +85,7 @@ AdversarialClock::GetLocalTime ()
 }
 
 Time 
-AdversarialClock::GlobalToLocalTime (Time globalTime)
+PeriodicClock::GlobalToLocalTime (Time globalTime)
 {
   NS_LOG_FUNCTION (this << globalTime);
 
@@ -112,7 +110,7 @@ AdversarialClock::GlobalToLocalTime (Time globalTime)
 }
 
 Time 
-AdversarialClock::LocalToGlobalTime (Time localtime)
+PeriodicClock::LocalToGlobalTime (Time localtime)
 {
   NS_LOG_FUNCTION (this << localtime);
 
@@ -137,7 +135,7 @@ AdversarialClock::LocalToGlobalTime (Time localtime)
 }
 
 Time
-AdversarialClock::GlobalToLocalAbs (Time globaldDelay)
+PeriodicClock::GlobalToLocalDelay (Time globaldDelay)
 {
   NS_LOG_FUNCTION (this << globaldDelay);
 
@@ -151,7 +149,7 @@ AdversarialClock::GlobalToLocalAbs (Time globaldDelay)
 }
 
 Time
-AdversarialClock::LocalToGlobalAbs (Time localdelay)
+PeriodicClock::LocalToGlobalDelay (Time localdelay)
 {
   NS_LOG_FUNCTION (this << localdelay);
   Time localTime = GlobalToLocalTime (Simulator::Now ());
@@ -164,7 +162,7 @@ AdversarialClock::LocalToGlobalAbs (Time localdelay)
 }
 
 Time
-AdversarialClock::CalculateRelativeTimeGlobalToLocal (Time time)
+PeriodicClock::CalculateRelativeTimeGlobalToLocal (Time time)
 {
   NS_LOG_FUNCTION (this << time);
 
@@ -199,7 +197,7 @@ AdversarialClock::CalculateRelativeTimeGlobalToLocal (Time time)
 }
 
 Time
-AdversarialClock::CalculateRelativeTimeLocalToGlobal (Time time)
+PeriodicClock::CalculateRelativeTimeLocalToGlobal (Time time)
 {
 
   Time ret;

@@ -15,10 +15,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre guillermoaguirre10@gmail.com
+ * Author: Guillermo Aguirre <guillermoaguirre10@gmail.com>
  */
-#ifndef CLOCK_MODEL_IMPL_H
-#define CLOCK_MODEL_IMPL_H
+#ifndef CLOCK_MODEL_H
+#define CLOCK_MODEL_H
 
 #include "ns3/object.h"
 #include "ns3/object-factory.h"
@@ -27,15 +27,15 @@
 /**
  * \file
  * \ingroup clock
- * ns3:ClockModelImpl declaration
+ * ns3:ClockModel interface declaration
  */
 
 namespace ns3{
 /**
 * \ingroup clock
-* Clock model implementation
+* Clock model 
 */ 
-class ClockModelImpl : public Object
+class ClockModel : public Object
 {
 public:
   /**
@@ -51,11 +51,11 @@ public:
   /**  \copydoc ClockModel::LocalToGlobalAbs  */
   virtual Time LocalToGlobalTime (Time localtime) = 0;
   /**  \copydoc ClockModel::GlobalToLocalTime  */
-  virtual Time GlobalToLocalAbs (Time globaldDelay) = 0;
+  virtual Time GlobalToLocalDelay (Time globaldDelay) = 0;
   /**  \copydoc ClockModel::GlobalToLocalAbs  */
-  virtual Time LocalToGlobalAbs (Time localdelay) = 0;
+  virtual Time LocalToGlobalDelay (Time localdelay) = 0;
   
 };
 }// namespace ns3
 
-#endif /* CLOCK_MODEL_IMPL_H */
+#endif /* CLOCK_MODEL_H */

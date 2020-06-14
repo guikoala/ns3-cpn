@@ -1,6 +1,0 @@
-==7212== Massif, a heap profiler
-==7212== Copyright (C) 2003-2017, and GNU GPL'd, by Nicholas Nethercote
-==7212== Using Valgrind-3.13.0 and LibVEX; rerun with -h for copyright info
-==7212== Command: ./waf --run src/clock/examples/computation-clock
-==7212== Parent PID: 2358
-==7212== 

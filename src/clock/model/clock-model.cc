@@ -15,10 +15,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre 
+ * Author: Guillermo Aguirre <guillermoaguirre10@gmail.com> 
  */
 
-#include "ns3/clock-model-impl.h"
+#include "ns3/clock-model.h"
 #include "ns3/log.h"
 
 /**
@@ -28,14 +28,14 @@
  */
 
 namespace ns3{
-NS_LOG_COMPONENT_DEFINE ("ClockModelImpl");
+NS_LOG_COMPONENT_DEFINE ("ClockModel");
 
-NS_OBJECT_ENSURE_REGISTERED (ClockModelImpl);
+NS_OBJECT_ENSURE_REGISTERED (ClockModel);
 
 TypeId
-ClockModelImpl::GetTypeId (void)
+ClockModel::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::ClockModelImpl")
+  static TypeId tid = TypeId ("ns3::ClockModel")
     .SetParent<Object> ()
     .SetGroupName ("Clock")
   ;

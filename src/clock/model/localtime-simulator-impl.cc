@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre 
+ * Author: Guillermo Aguirre <guillermoaguirre10@gmail.com> 
  */
 
 
@@ -258,13 +258,13 @@ LocalTimeSimulatorImpl::Schedule (Time const &localDelay, EventImpl *event)
   NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::Schedule Thread-unsafe invocation!");
   Time tAbsolute;
 
-  //Avoid stop application events with 4294967295 context
-  if ( m_currentContext == uint32_t(4294967295))
+  //Avoid context that do not correspond to any node
+  if ( m_currentContext == uint32_t(4294967295))                                                                                                
   {
     tAbsolute = CalculateAbsoluteTime (localDelay);
   }
   else
-  {
+  {                           
     // Obtain nodes clock from the context
     Ptr <Node>  n = NodeList::GetNode (m_currentContext);
     Ptr <LocalClock> clock = n -> GetObject <LocalClock> ();
@@ -273,10 +273,10 @@ LocalTimeSimulatorImpl::Schedule (Time const &localDelay, EventImpl *event)
       //If there is no clock attach we create a perfectClock synchronazed with the simulator time
       Ptr<PerfectClockModelImpl> perfectClock = CreateObject<PerfectClockModelImpl> ();
       clock = CreateObject<LocalClock> ();
-      clock -> SetAttribute ("ClockModelImpl", PointerValue (perfectClock));
+      clock -> SetAttribute ("ClockModel", PointerValue (perfectClock));
       n -> AggregateObject (clock);
     }
-    Time globalTimeDelay = clock -> LocalToGlobalAbs (localDelay);
+    Time globalTimeDelay = clock -> LocalToGlobalDelay (localDelay);
     tAbsolute = CalculateAbsoluteTime (globalTimeDelay);
     //Insert eventId in the list of scheduled events by the node.
     EventId eventId = EventId(event, tAbsolute.GetTimeStep (), GetContext (), m_uid);
@@ -351,15 +351,7 @@ LocalTimeSimulatorImpl::ScheduleNow (EventImpl *event)
 {
   NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::ScheduleNow Thread-unsafe invocation!");
 
-  Scheduler::Event ev;
-  ev.impl = event;
-  ev.key.m_ts = m_currentTs;
-  ev.key.m_context = GetContext ();
-  ev.key.m_uid = m_uid;
-  m_uid++;
-  m_unscheduledEvents++;
-  m_events->Insert (ev);
-  EventId eventId = EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
+  EventId eventId = Schedule (Time (0), event);
   return eventId;
 }
 
@@ -442,7 +434,6 @@ LocalTimeSimulatorImpl::CancelRescheduling (const EventId &id, const EventId &ne
   if (!IsExpired (id))
     {
       NS_LOG_DEBUG("CANCEL DUE TO RESCHEDULING EVENT " << id.GetUid ());
-      m_eventCancelation.push_back (id);    
       m_cancelEventMap.insert (std::make_pair (id.GetUid (), newId));
     }
 }
@@ -469,7 +460,7 @@ LocalTimeSimulatorImpl::IsExpired (const EventId &id) const
       return true;
     }
 
-  //Check the maping between events to ensure that events are expired. Event1 has been reschedule with the same implbut different time as Event2.
+  //Check the maping between events to ensure that events are expired. Event1 has been reschedule with the same implbut different time  Event2.
   //When as for Event1 (that is been "cancacelled") need to know if Event2 is cancel. 
 
   CancelEventsMap::const_iterator it = m_cancelEventMap.begin();

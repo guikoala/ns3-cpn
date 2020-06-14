@@ -15,11 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre,
- * Obtained from Matthieu.coudron <matthieu.coudron@lip6.fr> implementation. 
- * Perfect Clock class is just for testing purpose. 
+ * Author: Guillermo Aguirre <guillermoaguirre10@gmail.com>
  */
-// TODO Logging 
+
 
 #include "ns3/perfect-clock-model-impl.h"
 #include "ns3/log.h"
@@ -38,15 +36,15 @@ TypeId
 PerfectClockModelImpl::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PerfectClockModelImpl")
-    .SetParent<ClockModelImpl> ()
+    .SetParent<ClockModel> ()
     .SetGroupName ("Clock")
     .AddConstructor<PerfectClockModelImpl> ()
     .AddAttribute ("Frequency", "Frequency difference between clocks",
-                  DoubleValue(2),
+                  DoubleValue(1),
                   MakeDoubleAccessor (&PerfectClockModelImpl::m_frequency),
                   MakeDoubleChecker <double> ())
     .AddAttribute ("Offset", "Offset between clocks",
-                  TimeValue(Seconds (0.1)),
+                  TimeValue(Seconds (0)),
                   MakeTimeAccessor (&PerfectClockModelImpl::m_offset),
                   MakeTimeChecker ()) 
   ;
@@ -79,7 +77,7 @@ Time
 PerfectClockModelImpl::GlobalToLocalTime (Time globalTime)
 {
   NS_LOG_FUNCTION(this << globalTime);
-  Time localTime = Time ((globalTime - m_offset).GetDouble () / m_frequency) + m_offset ; 
+  Time localTime = Time ((globalTime).GetDouble () * m_frequency) + m_offset; 
   return localTime;
 }
 
@@ -87,12 +85,12 @@ Time
 PerfectClockModelImpl::LocalToGlobalTime (Time localTime)
 {
   NS_LOG_FUNCTION (this << localTime);
-  Time globalTime = Time ((localTime - m_offset).GetDouble () * m_frequency) + m_offset;
+  Time globalTime = Time (((localTime).GetDouble () - m_offset) / m_frequency) ;
   return globalTime;
 }
 
 Time 
-PerfectClockModelImpl::GlobalToLocalAbs (Time globaldDelay)
+PerfectClockModelImpl::GlobalToLocalDelay (Time globaldDelay)
 {
   NS_LOG_FUNCTION (this << globaldDelay); 
   Time localDelay;
@@ -103,7 +101,7 @@ PerfectClockModelImpl::GlobalToLocalAbs (Time globaldDelay)
 }
 
 Time 
-PerfectClockModelImpl::LocalToGlobalAbs (Time localDelay)
+PerfectClockModelImpl::LocalToGlobalDelay (Time localDelay)
 {
   NS_LOG_FUNCTION (this << localDelay);
   Time globalDelay;

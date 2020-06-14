@@ -15,36 +15,36 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Guillermo Aguirre 
+ * Author: Guillermo Aguirre <guillermoaguirre10@gmail.com>
  */
-#ifndef ADVERSARIAL_CLOCK_MODEL_H
-#define ADVERSARIAL_CLOCK_MODEL_H
+#ifndef PERIODIC_CLOCK_MODEL_H
+#define PERIODIC_CLOCK_MODEL_H
 
-#include "clock-model-impl.h"
+#include "clock-model.h"
 #include "ns3/object.h"
 
 namespace ns3 {
 
 /**
  * \file Clock
- * ns3::AdversarialClock declaration
+ * ns3::PeriodicClock declaration
  * 
  * @brief This class represents an adversarial clock modelling. 
  */
 
-class AdversarialClock : public ClockModelImpl
+class PeriodicClock : public ClockModel
 {
 public:
   static TypeId GetTypeId (void);
 
-  AdversarialClock ();
-  ~AdversarialClock ();
+  PeriodicClock ();
+  ~PeriodicClock ();
 
   Time GetLocalTime ();
   Time GlobalToLocalTime (Time globalTime);
   Time LocalToGlobalTime (Time localtime);
-  Time GlobalToLocalAbs (Time globaldDelay);
-  Time LocalToGlobalAbs (Time localdelay);
+  Time GlobalToLocalDelay (Time globaldDelay);
+  Time LocalToGlobalDelay (Time localdelay);
 private:
 
   Time m_delta;
