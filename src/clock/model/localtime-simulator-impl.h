@@ -39,30 +39,36 @@ namespace ns3{
  *  \ingroup simulator
  * 
  * @brief Implementation of single process simulator based on node local time.
- * This class slighly differ from the default simulator implementation.
- * The purpose of this class is to provide to the simulator the capability to manage different timing references
- * within the nodes of the network.
- * This class provide the posibility to schedule events with different notion of time and to reschedule events
- * when clock update happens during the simulation.
- * For that a new functionality is provide to the Schedule function. Note that ScheduleWithContext function remain the same a in the defaultsimulatorImpl.
- * This is because in the mayority of the times a call to ScheduleWithContext happen, is due to a packet transmission within the channel. The delay that 
- * is introduced in that call is normally the channel transmission time (As in CsmaNetDevice), which does not depend on the nodes clock. Because of that, 
- * this function remain unchanged. 
- * 
- * Schedule function allows to retrieve from the conext the node that is scheduling the events. After retrieving the node, the Localclock object 
- * is accessed trhough the aggregation system. This new functionality, is just possible if a LocalClock object has been aggregated. (If not aggregated
- * before one perfect clock syncrhonized with the simulator time is attached to the node).
- * It permits to attach to each node in the simulation different time notions. 
- * 
- *  This class also provide the posibilty to the nodes to cancel events due to a clock update event. Imagine that a node receive a clock update 
- * message. All the events that has been scheduled by the node need to be reschedule at the proper time. This class maintains a list of cancel events 
- * by the nodes. Node don't cancell the events directly because if Simulator::Cancel () or Simulator::Destroy() are called there is no way to recover the event 
- * implementation. 
- * To over come from that situation, the simulator maintains a list with all the cancelled events by the nodes. When procesing an event, the simulator checks
- * first if the event has been cancelled. If yes it discard the event, if not it execute.
- * 
- * It has to be taken into account that when Schedule () function is called, the time parameter is in localtime. However, when Now() function
- * is called, the return value is in globaltime.
+ * The main differences between LocalTimeSimulatorImpl and DefaultSimulatorImpl are: 
+
+    *  When an event is scheduled using Simulator::Schedule() function, the delay is understood as being a local-time delay. 
+    The delay is then translated into a global-time delay before being inserted into the scheduler (the scheduler only operates in the global-time domain.
+    * When a clock model is updated, LocalTimeSimulatorImpl keeps track of the events that have been rescheduled, and will not execute the old events.
+
+  When Simulator::Schedule() is called, the Node object  is retrieved from the NodeList using the current context of the simulator. 
+  When the context do not correspond to any node, delays are considered to be in global time.
+
+  When Simulator::ScheduleWithContext (uint32_t context, const Time &delay, EventImpl *event) no further actions are taken. the delay is considered 
+  to be in global time. This is because when a call to ScheduleWithContext happen, is due to a packet transmission within the channel. 
+  The delay in that call is normally the channel transmission time (As in CsmaNetDevice), which does not depend on the nodes clock. Because of that, 
+  this function remain unchanged in comparison with the DefaultSimulatorImpl function.
+
+  When Simulator::ScheduleWithContext() is called, the same actions as in DefaultSimulatorImpl are taken. 
+  The delay is understood as being already a global-time delay.
+
+  When Simulator::ScheduleNow() is called, a call to Schedule() function with local-time delay 0 is done.
+
+  One of the things to take into account is that Simulator::Now()  returns the current global time and not the local time.
+  Another particularity of this implementation resides in the CancelEventsMap map located in LocalTimeSimulatorImpl. When events are 
+  rescheduled, old events id (as key) with their corresponding new events (as value) are inserted in this map. As explained in the LocalClock 
+  section, we cannot use  Simulator::Cancel() to remove old events or their implementation would be lost.
+  In order not to execute events that should not be invoked (because the execution time attach to the event does not correspond to the new clock of
+  the node), ProcessOneEvent() function is slightly modifyied and checks the CancelEventsMap. 
+  If the EventId that is going to be executed is found as the map key, the event is skipped.
+
+  Other problem arises from the fact that the original event is never again valid, when rescheduling events. Any process (i.e Applications) that 
+  schedule events will never realize about the change of EventId due to the rescheduling. Therefore, there is a need to map between the original 
+  events and the reschedule events.
  * 
  */
 

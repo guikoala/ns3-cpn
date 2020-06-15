@@ -10,7 +10,6 @@ def build(bld):
     module = bld.create_ns3_module('clock', ['core'])
     module.source = [
         'model/clock-model.cc',
-        'model/periodic-clock-model.cc',
         'model/local-clock.cc',
         'model/localtime-simulator-impl.cc',
         'model/perfect-clock-model-impl.cc',
@@ -26,7 +25,6 @@ def build(bld):
     headers.module = 'clock'
     headers.source = [
         'model/clock-model.h',
-        'model/periodic-clock-model.h',
         'model/local-clock.h',
         'model/localtime-simulator-impl.h',
         'model/perfect-clock-model-impl.h',
@@ -38,5 +36,5 @@ def build(bld):
 
    
 
-    # bld.ns3_python_bindings()
+    bld.ns3_python_bindings()
 

@@ -84,7 +84,16 @@ When Simulator::ScheduleNow() is called, a call to Schedule() function with loca
 
 One of the things to take into account is that Simulator::Now()  returns the current global time and not the local time.
 
+Another particularity of this implementation resides in the CancelEventsMap map located in LocalTimeSimulatorImpl. When events are 
+rescheduled, old events id (as key) with their corresponding new events (as value) are inserted in this map. As explained in the LocalClock 
+section, we cannot use  Simulator::Cancel() to remove old events or their implementation would be lost.
+In order not to execute events that should not be invoked (because the execution time attach to the event does not correspond to the new clock of
+the node), ProcessOneEvent() function is slightly modifyied and checks the CancelEventsMap. 
+If the EventId that is going to be executed is found as the map key, the event is skipped.
 
+Other problem arises from the fact that the original event is never again valid, when rescheduling events. Any process (i.e Applications) that 
+schedule events will never realize about the change of EventId due to the rescheduling. Therefore, there is a need to map between the original 
+events and the reschedule events.
 Scope and Limitations
 =====================
 Clock module attemp to introduce in ns-3 the concept of clocks with a clear interface and without any modification in the source code of ns-3.
