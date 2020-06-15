@@ -36,16 +36,15 @@ namespace ns3 {
 /**
  * \ingroup Clock
  * 
- * @brief This class represent the clock interface aggregate to each node. By aggregation we allow to LocalsimulatorImplementation access to this object
+ * @brief This class represent the clock interface aggregate to each node. By aggregation, we allow to LocalsimulatorImplementation access to this object
  * through the node.  
- * An object of this class has a unique attribute which represent the clock model behavioural (ClockModel) implemented in the node. 
- * This class allow to schedule events in local time and make the convertion between both domains (Local-Global). 
- * Also, allows updates of the clock model (SetClock function) by rescheduling events acording to the new clock model. E.g reception a NTP message with
+ * An object of this class has a unique attribute which represent the clock model implementation (ClockModel). 
+ * This class allow to schedule events in local time and make the conversion between both domains (Local-Global). 
+ * Also, allows updates of the clock model (SetClock function) by rescheduling events acording to the new clock model. E.i reception of an NTP message with
  * clock parameters update.
- * To this end, the object mantain a list of schedule events in the simulator that need to be update due to the clock update. When
+ * To this end, the object maintains a list of schedule events in the simulator that need to be update due to the clock update. When
  * a clock update happens, the list is run, removing and rescheduling events with the proper timing. 
  */
-
 
 
 class LocalClock : public Object
