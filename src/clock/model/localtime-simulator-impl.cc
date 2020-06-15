@@ -270,7 +270,7 @@ LocalTimeSimulatorImpl::Schedule (Time const &localDelay, EventImpl *event)
     Ptr <LocalClock> clock = n -> GetObject <LocalClock> ();
     if (clock == nullptr)
     {
-      //If there is no clock attach we create a perfectClock synchronazed with the simulator time
+      //If there is no clock attach we create a perfectClock (localTime = globalTime)
       Ptr<PerfectClockModelImpl> perfectClock = CreateObject<PerfectClockModelImpl> ();
       clock = CreateObject<LocalClock> ();
       clock -> SetAttribute ("ClockModel", PointerValue (perfectClock));
