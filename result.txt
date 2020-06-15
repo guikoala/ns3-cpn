@@ -1,2 +1,0 @@
-PASS: Test Suite "clock-test" (0.010)
-PASS: Test Suite "Check that basic event handling is working with ns3::ListScheduler" (0.000)
