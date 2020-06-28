@@ -52,30 +52,40 @@ main (int argc, char *argv[])
   Ptr<PerfectClockModelImpl> clockImpl4 = CreateObject <PerfectClockModelImpl> ();
   Ptr<PerfectClockModelImpl> clockImpl5 = CreateObject <PerfectClockModelImpl> ();
   //Clock paramenters
-  Time epsilon = NanoSeconds (500); //Time (MilliSeconds (10).GetDouble () * (1 - (1/1.001))) - MicroSeconds (1);
-  Time period = 3 * (Time (MilliSeconds (10).GetDouble ()/1.001)) + 3 * epsilon;
+  double slope = 1.2;
+  Time epsilon = NanoSeconds (5); //Time (MilliSeconds (10).GetDouble () * (1 - (1/1.001))) - MicroSeconds (1);
+  Time Delta = MicroSeconds (10);
+
+  Time interval = MicroSeconds (60); //Time::From((Delta*slope).GetSeconds () / (slope-1), Time::S);//MilliSeconds (10);
+  std::cout << "Interval in sec: " << Time::FromDouble((Delta*slope).GetNanoSeconds () / (slope-1), Time::NS) << std::endl;
+  Time period = 3 * (Time (interval.GetDouble ()/slope)) + 3 * epsilon;
+
   std::cout << "Epsilon: " << epsilon << std::endl;
   std::cout << "Period: " << period << std::endl;
+  std::cout << "Delta: " << Delta << std::endl;
+  std::cout << "Slope: " << slope << std::endl;
+  std::cout << "Interval: " << interval << std::endl;
+  std::cout << "Iterval/slope: " << interval.GetSeconds ()/slope << std::endl;
 
-  clockImpl0 -> SetAttribute ("Delta", TimeValue (MicroSeconds (1)));
+  clockImpl0 -> SetAttribute ("Delta", TimeValue (Delta));
   clockImpl0 -> SetAttribute ("Period", TimeValue (period));
-  clockImpl0 -> SetAttribute ("Interval", TimeValue (MilliSeconds (10))); 
+  clockImpl0 -> SetAttribute ("Interval", TimeValue (interval)); 
   clockImpl0 -> SetAttribute ("xvalueGlobal", TimeValue (MilliSeconds (5))); 
-  clockImpl0 -> SetAttribute ("Slope", DoubleValue (1.001));
+  clockImpl0 -> SetAttribute ("Slope", DoubleValue (slope));
 
-  clockImpl1 -> SetAttribute ("Delta", TimeValue (MicroSeconds (1)));
+  clockImpl1 -> SetAttribute ("Delta", TimeValue (Delta));
   clockImpl1 -> SetAttribute ("Period", TimeValue (period));
-  clockImpl1 -> SetAttribute ("Interval", TimeValue (MilliSeconds (10)));
+  clockImpl1 -> SetAttribute ("Interval", TimeValue (interval));
   clockImpl1 -> SetAttribute ("xvalueGlobal", TimeValue (MilliSeconds (5) + epsilon
-  +  Time (MilliSeconds (10).GetDouble ()/1.001)));  
-  clockImpl1 -> SetAttribute ("Slope", DoubleValue (1.001));
+  +  Time (interval.GetDouble ()/slope)));  
+  clockImpl1 -> SetAttribute ("Slope", DoubleValue (slope));
 
-  clockImpl2 -> SetAttribute ("Delta", TimeValue (MicroSeconds (1)));
+  clockImpl2 -> SetAttribute ("Delta", TimeValue (Delta));
   clockImpl2 -> SetAttribute ("Period", TimeValue (period));
-  clockImpl2 -> SetAttribute ("Interval", TimeValue (MilliSeconds (10)));
+  clockImpl2 -> SetAttribute ("Interval", TimeValue (interval));
   clockImpl2 -> SetAttribute ("xvalueGlobal", TimeValue (MilliSeconds (5) + 2*epsilon + 2*
-  Time (MilliSeconds (10).GetDouble ()/1.001)));
-  clockImpl2 -> SetAttribute ("Slope", DoubleValue (1.001));
+  Time (interval.GetDouble ()/slope)));
+  clockImpl2 -> SetAttribute ("Slope", DoubleValue (slope));
 
   clockImpl3 -> SetAttribute ("Frequency", DoubleValue (1));
   clockImpl4 -> SetAttribute ("Frequency", DoubleValue (1));
@@ -136,8 +146,8 @@ main (int argc, char *argv[])
 
   // Set datarate bettween Switch -- ATSSwitch
 
-  csma.SetChannelAttribute ("DataRate", DataRateValue (5000000));
-  csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
+  csma.SetChannelAttribute ("DataRate", DataRateValue (500000000000000));
+  csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (0)));
 
   link = csma.Install (NodeContainer (csmaSwitch, atsSwitch));
   switchDevices.Add (link.Get (0));
@@ -164,7 +174,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::ATSSchedulerQueueDisc::MaxSize", QueueSizeValue (QueueSize ("7000p")));
   Config::SetDefault ("ns3::ATSSchedulerQueueDisc::Group", PointerValue (group));
   Config::SetDefault ("ns3::ATSSchedulerQueueDisc::GroupID", UintegerValue (0));
-  Config::SetDefault ("ns3::ATSSchedulerQueueDisc::Burst", UintegerValue (1498));
+  Config::SetDefault ("ns3::ATSSchedulerQueueDisc::Burst", UintegerValue (540));
  
   //Create filter
   
@@ -172,9 +182,9 @@ main (int argc, char *argv[])
   uint16_t handle = tcATS.SetRootQueueDisc ("ns3::ATSTransmissionQueueDisc");
   tcATS.AddPacketFilter (handle, "ns3::ATSQueueDiscFilter");
   TrafficControlHelper::ClassIdList cid = tcATS.AddQueueDiscClasses (handle, 3, "ns3::QueueDiscClass");
-  tcATS.AddChildQueueDisc (handle, cid[0], "ns3::ATSSchedulerQueueDisc", "Rate", DataRateValue (DataRate ("149.8KB/s")));
-  tcATS.AddChildQueueDisc (handle, cid[1], "ns3::ATSSchedulerQueueDisc", "Rate", DataRateValue (DataRate ("149.8KB/s")));
-  tcATS.AddChildQueueDisc (handle, cid[2], "ns3::ATSSchedulerQueueDisc", "Rate", DataRateValue (DataRate ("149.8KB/s")));
+  tcATS.AddChildQueueDisc (handle, cid[0], "ns3::ATSSchedulerQueueDisc", "Rate", DataRateValue (DataRate ("9MB/s")));
+  tcATS.AddChildQueueDisc (handle, cid[1], "ns3::ATSSchedulerQueueDisc", "Rate", DataRateValue (DataRate ("9MB/s")));
+  tcATS.AddChildQueueDisc (handle, cid[2], "ns3::ATSSchedulerQueueDisc", "Rate", DataRateValue (DataRate ("9MB/s")));
   tcATS.Install (switchATSDevices.Get (0));
 
   // Add internet stack to the terminals
@@ -231,20 +241,22 @@ main (int argc, char *argv[])
 
   //Source 1
 
-  Time initialDeviation = MilliSeconds(5); //X1 value- x1 value in local + Delta/2
+  Time initialDeviation = MilliSeconds(5) ; //X1 value- x1 value in local + Delta/2
   AdversarialGenerationHelper onoff ("ns3::UdpSocketFactory", 
                      Address (InetSocketAddress (Ipv4Address ("10.1.1.4"), port1)));
   onoff.SetAttribute ("Period", TimeValue (period));
-  onoff.SetAttribute ("DataRate", DataRateValue (DataRate ("147KB/s")));
-  onoff.SetAttribute ("PacketSize", UintegerValue (1470) );
+  onoff.SetAttribute ("DataRate", DataRateValue (DataRate ("5.5333333MB/s")));
+  onoff.SetAttribute ("PacketSize", UintegerValue (512));
   ApplicationContainer app = onoff.Install (terminals.Get (0));
   Time initApp = 2*period + initialDeviation;
   app.Start (initApp);
   app.Stop (Seconds (1));
+  std::cout << "Init app 1 at: " << initApp << std::endl;
+
 
   Ptr<Node> node1 = terminals.Get (0);
   Ptr<LocalClock> node1Clock = node1->GetObject <LocalClock> ();
-  Time initApp2 = node1Clock->LocalToGlobalTime (initApp + MilliSeconds (10) - MicroSeconds (1)/2);
+  Time initApp2 = node1Clock->LocalToGlobalTime (initApp + interval - Delta/2);
   initApp2 += epsilon;
   std::cout << "Init app 2 at: " << initApp2 << std::endl;
 
@@ -252,15 +264,15 @@ main (int argc, char *argv[])
   AdversarialGenerationHelper onoff1 ("ns3::UdpSocketFactory", 
                      Address (InetSocketAddress (Ipv4Address ("10.1.1.4"), port2)));
   onoff1.SetAttribute ("Period", TimeValue (period));
-  onoff1.SetAttribute ("DataRate", DataRateValue (DataRate ("147KB/s")));
-  onoff1.SetAttribute ("PacketSize", UintegerValue (1470) );
+  onoff1.SetAttribute ("DataRate", DataRateValue (DataRate ("5.5333333MB/s")));
+  onoff1.SetAttribute ("PacketSize", UintegerValue (512) );
   app = onoff1.Install (terminals.Get (1));
   app.Start (initApp2);
   app.Stop (Seconds (1));
 
   Ptr<Node> node4 = terminals.Get (1);
   Ptr<LocalClock> node2Clock = node4->GetObject <LocalClock> ();
-  Time initApp3 = node2Clock->LocalToGlobalTime (initApp2 + MilliSeconds (10) - MicroSeconds (1)/2);
+  Time initApp3 = node2Clock->LocalToGlobalTime (initApp2 + interval - Delta /2);
   initApp3 += epsilon;
   std::cout << "Init app 3 at: " << initApp3 << std::endl;
 
@@ -268,8 +280,8 @@ main (int argc, char *argv[])
   AdversarialGenerationHelper onoff5 ("ns3::UdpSocketFactory", 
                      Address (InetSocketAddress (Ipv4Address ("10.1.1.4"), port3)));
   onoff5.SetAttribute ("Period", TimeValue (period));
-  onoff5.SetAttribute ("DataRate", DataRateValue (DataRate ("147KB/s")));
-  onoff5.SetAttribute ("PacketSize", UintegerValue (1470) );
+  onoff5.SetAttribute ("DataRate", DataRateValue (DataRate ("5.5333333MB/s")));
+  onoff5.SetAttribute ("PacketSize", UintegerValue (512) );
   app = onoff5.Install (terminals.Get (2));
   app.Start (initApp3);
   app.Stop (Seconds (1));
@@ -313,16 +325,16 @@ main (int argc, char *argv[])
   
   pcaphelper.HookDefaultSink <Queue<Packet>> (queue, "Dequeue", file1);
   
-  Time delay0 = 1*3*( Time (MilliSeconds (10).GetDouble ()*(1-1/1.001)) - epsilon);
-  Time delay = 2*3*( Time (MilliSeconds (10).GetDouble ()*(1-1/1.001)) - epsilon);
-  Time delay1 = 3*3*( Time (MilliSeconds (10).GetDouble ()*(1-1/1.001)) - epsilon);
-  Time delay2 = 4*3*( Time (MilliSeconds (10).GetDouble ()*(1-1/1.001)) - epsilon);
-  Time delay3 = 5*3*( Time (MilliSeconds (10).GetDouble ()*(1-1/1.001)) - epsilon);
-  Time delay4 = 6*3*( Time (MilliSeconds (10).GetDouble ()*(1-1/1.001)) - epsilon);
-  Time delay5 = 7*3*( Time (MilliSeconds (10).GetDouble ()*(1-1/1.001)) - epsilon);
-  Time delay6 = 8*3*( Time (MilliSeconds (10).GetDouble ()*(1-1/1.001)) - epsilon);
+  Time delay0 = 1*3*( Time (interval.GetDouble ()*(1-1/slope)) - epsilon);
+  Time delay = 2*3*( Time (interval.GetDouble ()*(1-1/slope)) - epsilon);
+  Time delay1 = 3*3*( Time (interval.GetDouble ()*(1-1/slope)) - epsilon);
+  Time delay2 = 4*3*( Time (interval.GetDouble ()*(1-1/slope)) - epsilon);
+  Time delay3 = 5*3*( Time (interval.GetDouble ()*(1-1/slope)) - epsilon);
+  Time delay4 = 6*3*( Time (interval.GetDouble ()*(1-1/slope)) - epsilon);
+  Time delay5 = 7*3*( Time (interval.GetDouble ()*(1-1/slope)) - epsilon);
+  Time delay6 = 8*3*( Time (interval.GetDouble ()*(1-1/slope)) - epsilon);
 
-  Time increase = 3 * ( Time (MilliSeconds (10).GetDouble ()*(1-1/1.001)) -epsilon);
+  Time increase = 3 * ( Time (interval.GetDouble ()*(1-1/slope)) -epsilon);
 
   std::cout << "Delay " << delay0 << std::endl;
   std::cout << "Delay " << delay << std::endl;

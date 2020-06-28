@@ -260,6 +260,7 @@ EventId
 LocalTimeSimulatorImpl::Schedule (Time const &delay, EventImpl *event)
 {
   NS_LOG_INFO (this << delay.GetTimeStep () << event);
+  NS_LOG_DEBUG ("Delay :" << delay);
   NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::Schedule Thread-unsafe invocation!");
 
   Time tAbsolute;
@@ -274,6 +275,7 @@ LocalTimeSimulatorImpl::Schedule (Time const &delay, EventImpl *event)
     Ptr <Node>  n = NodeList::GetNode (m_currentContext);
     Ptr <LocalClock> clock = n -> GetObject <LocalClock> ();
     Time globalTimeDelay = clock -> LocalToGlobalAbs (delay);
+    NS_LOG_DEBUG ("GLOBALtIMEdELAY " << globalTimeDelay);
     tAbsolute = CalculateAbsoluteTime (globalTimeDelay);
     //Insert eventId in the list of scheduled events by the node.
     EventId eventId (event, tAbsolute.GetTimeStep (), GetContext (), m_uid);

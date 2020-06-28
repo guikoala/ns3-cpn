@@ -91,10 +91,21 @@ AdversarialClock::GlobalToLocalTime (Time globalTime)
 {
   NS_LOG_FUNCTION (this << globalTime);
 
-  NS_LOG_DEBUG ("Global Time - xjGlobal : " << globalTime);
+  NS_LOG_DEBUG ("Global Time - xjGlobal : " << globalTime-m_xjglobal);
 
-  uint64_t cycles =  (globalTime - m_xjglobal).GetInteger () / (m_period).GetInteger ();
+   uint64_t cycles;
+  if (globalTime-m_xjglobal >= 0)
+  {
+    cycles =  (globalTime - m_xjglobal).GetInteger () / (m_period).GetInteger ();
+  }
+  else
+  {
+    cycles = 0;
+  }
+  
 
+  
+  
   NS_LOG_DEBUG ("Number of cycles global time: " << cycles);
   
   if (globalTime >  m_xjglobal + cycles)
@@ -120,8 +131,15 @@ AdversarialClock::LocalToGlobalTime (Time localtime)
 
   NS_LOG_DEBUG ("Local Time - xjLocal : " << localtime);
 
-  uint64_t cycles =  (localtime - m_xjlocal).GetInteger () / (m_period).GetInteger ();
-  NS_LOG_DEBUG ("local int; " << localtime.GetInteger () << "period int" << (m_period).GetInteger ());
+  uint64_t cycles;
+  if (localtime-m_xjlocal >= 0)
+  {
+    cycles =  (localtime - m_xjlocal).GetInteger () / (m_period).GetInteger ();
+  }
+  else
+  {
+    cycles = 0;
+  }
   NS_LOG_DEBUG ("Number of cycles: " << cycles);
   
   if (localtime >  m_xjlocal + cycles)

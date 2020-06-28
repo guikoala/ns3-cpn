@@ -251,7 +251,7 @@ ATSSchedulerQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
   //TODO
   // ADD max residence time. Problems with resolution when execute PS
   
-  if (eligibilityTime < arrivalTime + Seconds (1) || eligibilityTime == arrivalTime +  Seconds (1))
+  if (eligibilityTime < arrivalTime + Seconds (100) || eligibilityTime == arrivalTime +  Seconds (100))
   {
     
     //The frame is valid
